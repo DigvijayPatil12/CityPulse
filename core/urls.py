@@ -26,4 +26,7 @@ urlpatterns = [
     # 6. ADMIN HOME PAGE (Target for Admin login)
     path('admin/home/', views.admin_home_page, name='admin_home'),
 
+     # 7. USER PROFILE PAGE (ADD THIS NEW LINE)
+    path('profile/', views.user_profile, name='profile'),
+
 ]

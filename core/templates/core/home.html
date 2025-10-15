@@ -245,15 +245,14 @@
                 <button id="user-menu-button" aria-haspopup="true" aria-expanded="false">
                     <span class="material-icons">person</span>
                 </button>
-                <div id="dropdown-menu" class="dropdown-content">
-                    <a href="#">View Profile</a>
-                    <a href="#">Add Query</a>
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="logout-btn">Log Out</button>
-                    </form>
-                </div>
-            </div>
+               <div id="dropdown-menu" class="dropdown-content">
+    <a href="{% url 'profile' %}">View Profile</a>
+    <a href="#">My Reports</a>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="logout-btn">Log Out</button>
+    </form>
+</div>
         </nav>
     </header>
 
