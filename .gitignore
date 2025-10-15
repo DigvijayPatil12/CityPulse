@@ -15,3 +15,6 @@ db.sqlite3
 /media
 /static
 .DS_Store
+
+#sensitive
+login info
