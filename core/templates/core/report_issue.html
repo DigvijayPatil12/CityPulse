@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Report an Issue</title>
+</head>
+<body>
+    <h1>Report an Issue</h1>
+    <p>Thank you for helping us improve! Please describe the issue below.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <textarea rows="10" cols="50" placeholder="Describe the problem..."></textarea><br>
+        <button type="submit">Submit Report</button>
+    </form>
+    
+    <p style="margin-top: 20px;">
+        <a href="{% url 'home' %}">← Back to Home</a>
+    </p>
+</body>
+</html>

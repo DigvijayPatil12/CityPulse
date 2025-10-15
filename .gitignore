@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*~
+
+# Virtual Environment
+DAP/ # <-- Make sure this matches your virtual env folder name
+venv/
+env/
+
+# Django specific
+db.sqlite3
+/media
+/static
+.DS_Store
