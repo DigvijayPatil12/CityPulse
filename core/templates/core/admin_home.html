@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h1 style="color: red; border-bottom: 2px solid red; padding-bottom: 10px;">ADMIN DASHBOARD</h1>
+    <h2>Welcome, {{ user.first_name }}! (Staff Access)</h2>
+    
+    <p>You have access to extended system functionalities:</p>
+    
+    <ul>
+        <li><a href="{% url 'admin:index' %}">Go to Django Admin Interface</a> (For full data management)</li>
+        <li>Manage Users</li>
+        <li>System Configuration</li>
+        <li>View All Reports</li>
+    </ul>
+
+    <hr style="margin: 20px 0;">
+    
+    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" style="background: none; border: none; color: blue; cursor: pointer; text-decoration: underline; padding: 0; font-size: 1em;">
+            Log Out
+        </button>
+    </form>
+</body>
+</html>

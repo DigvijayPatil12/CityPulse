@@ -1,21 +1,290 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Report an Issue</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report an Issue - CityPulse</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #007bff; --primary-hover: #0056b3;
+            --light-gray: #f4f7f6; --dark-gray: #6c757d;
+            --border-color: #ced4da; --error-color: #dc3545;
+        }
+        body {
+            font-family: 'Poppins', sans-serif; background-color: var(--light-gray);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px;
+        }
+        .wizard-container {
+            background-color: #ffffff; padding: 30px 40px; border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px;
+        }
+        .progress-bar {
+            display: flex; justify-content: space-between; margin-bottom: 30px;
+            counter-reset: step;
+        }
+        .progress-step {
+            width: 33.33%; text-align: center; position: relative;
+            color: var(--border-color); font-weight: 600;
+        }
+        .progress-step::before {
+            content: counter(step); counter-increment: step;
+            width: 30px; height: 30px; line-height: 30px;
+            border: 2px solid var(--border-color); border-radius: 50%;
+            display: block; margin: 0 auto 10px; background-color: white;
+            transition: all 0.3s ease;
+        }
+        .progress-step::after {
+            content: ''; width: 100%; height: 2px;
+            background-color: var(--border-color);
+            position: absolute; top: 15px; left: -50%; z-index: -1;
+            transition: all 0.3s ease;
+        }
+        .progress-step:first-child::after { content: none; }
+        .progress-step.active { color: var(--primary-color); }
+        .progress-step.active::before { border-color: var(--primary-color); background-color: var(--primary-color); color: white; }
+        .progress-step.active::after { background-color: var(--primary-color); }
+
+        .form-step { display: none; }
+        .form-step.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .form-step h2 { font-weight: 600; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
+        textarea.form-control { resize: vertical; min-height: 100px; }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600;
+            font-size: 1rem; cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .buttons-group { display: flex; justify-content: space-between; margin-top: 30px; }
+        #map { height: 300px; width: 100%; border-radius: 8px; margin-top: 15px; }
+        #image-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        #image-previews img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); }
+        .hidden { display: none; }
+        #error-message { color: var(--error-color); text-align: center; margin-top: 15px; font-weight: 500; min-height: 20px; }
+    </style>
 </head>
 <body>
-    <h1>Report an Issue</h1>
-    <p>Thank you for helping us improve! Please describe the issue below.</p>
-    
-    <form method="post">
-        {% csrf_token %}
-        <textarea rows="10" cols="50" placeholder="Describe the problem..."></textarea><br>
-        <button type="submit">Submit Report</button>
-    </form>
-    
-    <p style="margin-top: 20px;">
-        <a href="{% url 'home' %}">← Back to Home</a>
-    </p>
+    <div class="wizard-container">
+        <div class="progress-bar">
+            <div class="progress-step active" data-title="Issue"></div>
+            <div class="progress-step" data-title="Location"></div>
+            <div class="progress-step" data-title="Details"></div>
+        </div>
+        <form id="reportForm" method="post" action="{% url 'report_issue' %}" enctype="multipart/form-data" onsubmit="return finalValidation()">
+            {% csrf_token %}
+            <div class="form-step active">
+                <h2>Step 1: What is the issue?</h2>
+                <div class="form-group">
+                    <label for="issue-type">Type of Issue</label>
+                    <select name="issue_type" id="issue-type" class="form-control" required>
+                        <option value="" disabled selected>-- Select an issue --</option>
+                        <option value="garbage">Garbage</option>
+                        <option value="pothole">Pothole</option>
+                        <option value="waterlogging">Waterlogging</option>
+                        <option value="street_light">Broken Streetlight</option>
+                    </select>
+                </div>
+                <div class="form-group hidden" id="sub-category-group">
+                    <label for="sub-category">Sub-Category</label>
+                    <select name="sub_category" id="sub-category" class="form-control"></select>
+                </div>
+            </div>
+
+            <div class="form-step">
+                <h2>Step 2: Where is the issue?</h2>
+                <div class="form-group">
+                    <label>Click button or drag the pin to set the exact location.</label>
+                    <button type="button" class="btn btn-primary" id="get-location-btn">
+                        <span class="material-icons" style="vertical-align: middle; font-size: 1.2rem;">my_location</span>
+                        Use My Current Location
+                    </button>
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <div class="form-step">
+                <h2>Step 3: Add Details & Photos</h2>
+                <div class="form-group">
+                    <label for="description">Description (Required)</label>
+                    <textarea name="description" id="description" class="form-control" placeholder="Provide any extra details..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="issue-images">Upload Photos (Optional, up to 3)</label>
+                    <input type="file" name="issue_images" id="issue-images" class="form-control" multiple accept="image/*">
+                    <div id="image-previews"></div>
+                </div>
+            </div>
+            
+            <div id="error-message"></div>
+
+            <div class="buttons-group">
+                <button type="button" class="btn btn-secondary" id="prev-btn" disabled>Previous</button>
+                <button type="button" class="btn btn-primary" id="next-btn">Next</button>
+            </div>
+
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const formSteps = [...document.querySelectorAll('.form-step')];
+            const progressSteps = [...document.querySelectorAll('.progress-step')];
+            const errorMessage = document.getElementById('error-message');
+            let currentStep = 0;
+
+            const subCategoryData = {
+                garbage: ['Bin overflowing', 'Illegal dumping', 'Uncollected trash'],
+                pothole: ['Small pothole', 'Large pothole', 'Multiple potholes'],
+                waterlogging: ['Clogged drain', 'Flooded street', 'Stagnant water'],
+                street_light: ['Light not working', 'Flickering light', 'Damaged pole']
+            };
+            
+            // --- STABLE WIZARD NAVIGATION ---
+            nextBtn.addEventListener('click', (e) => {
+                if (nextBtn.type === 'submit') {
+                    // Let the form submit normally on the last step
+                    return;
+                }
+                
+                // Validate current step before proceeding
+                if (validateStep(currentStep)) {
+                    if (currentStep < formSteps.length - 1) {
+                        currentStep++;
+                        updateFormSteps();
+                    }
+                }
+            });
+            prevBtn.addEventListener('click', () => {
+                if (currentStep > 0) {
+                    currentStep--;
+                    updateFormSteps();
+                }
+            });
+            function updateFormSteps() {
+                errorMessage.textContent = ''; // Clear errors on step change
+                formSteps.forEach((step, index) => step.classList.toggle('active', index === currentStep));
+                progressSteps.forEach((step, index) => step.classList.toggle('active', index <= currentStep));
+                prevBtn.disabled = currentStep === 0;
+
+                if (currentStep === formSteps.length - 1) {
+                    nextBtn.textContent = 'Submit Report';
+                    nextBtn.type = 'submit'; // Change to submit button
+                } else {
+                    nextBtn.textContent = 'Next';
+                    nextBtn.type = 'button'; // Ensure it's a regular button
+                }
+                
+                if (formSteps[currentStep].contains(document.getElementById('map'))) {
+                    if (!mapInitialized) initMap();
+                    // Fix map rendering glitch
+                    setTimeout(() => map.invalidateSize(), 10);
+                }
+            }
+            
+            // --- STEP VALIDATION ---
+            const issueTypeSelect = document.getElementById('issue-type');
+            const latInput = document.getElementById('latitude');
+            const descriptionInput = document.getElementById('description');
+
+            function validateStep(stepIndex) {
+                errorMessage.textContent = ''; // Clear previous errors
+                if (stepIndex === 0) {
+                    if (issueTypeSelect.value === '') {
+                        errorMessage.textContent = 'Please select an issue type to continue.';
+                        return false;
+                    }
+                }
+                if (stepIndex === 1) {
+                    if (latInput.value === '') {
+                        errorMessage.textContent = 'Please set the issue location on the map.';
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            window.finalValidation = function() {
+                if (descriptionInput.value.trim() === '') {
+                    errorMessage.textContent = 'Please add a description before submitting.';
+                    return false; // Prevent form submission
+                }
+                return true; // Allow form submission
+            }
+            
+            // --- INTERACTIVE MAP (with initialization fix) ---
+            let map, marker, mapInitialized = false;
+            function initMap() {
+                map = L.map('map').setView([22.3145, 87.3093], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                marker = L.marker([22.3145, 87.3093], { draggable: true }).addTo(map)
+                    .bindPopup('Drag me to the exact issue location!').openPopup();
+                
+                marker.on('dragend', e => {
+                    const latlng = e.target.getLatLng();
+                    latInput.value = latlng.lat;
+                    lonInput.value = latlng.lng;
+                });
+                mapInitialized = true;
+            }
+            document.getElementById('get-location-btn').addEventListener('click', () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        const coords = [pos.coords.latitude, pos.coords.longitude];
+                        map.setView(coords, 17);
+                        marker.setLatLng(coords);
+                        latInput.value = coords[0];
+                        lonInput.value = coords[1];
+                        map.closePopup();
+                    });
+                }
+            });
+
+            // --- Other features (Sub-categories, Image Previews) ---
+            const subCategoryGroup = document.getElementById('sub-category-group');
+            const subCategorySelect = document.getElementById('sub-category');
+            issueTypeSelect.addEventListener('change', e => {
+                const type = e.target.value;
+                if (subCategoryData[type]) {
+                    subCategorySelect.innerHTML = subCategoryData[type]
+                        .map(sub => `<option value="${sub.toLowerCase().replace(' ', '_')}">${sub}</option>`).join('');
+                    subCategoryGroup.classList.remove('hidden');
+                } else {
+                    subCategoryGroup.classList.add('hidden');
+                }
+            });
+            const imageInput = document.getElementById('issue-images');
+            const previewsContainer = document.getElementById('image-previews');
+            imageInput.addEventListener('change', () => {
+                previewsContainer.innerHTML = '';
+                const files = Array.from(imageInput.files).slice(0, 3);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        previewsContainer.innerHTML += `<img src="${e.target.result}" alt="preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

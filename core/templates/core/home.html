@@ -163,7 +163,24 @@
             height: 100%;
             border-radius: 12px;
         }
-
+.brand-title {
+            font-size: 1.8rem;
+            font-weight: 700; /* Bolder font */
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            /* Gradient Text Effect */
+            background: linear-gradient(45deg, #007bff, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            /* text-fill-color: transparent; */
+        }
+        .brand-title .material-icons {
+            font-size: 2rem; /* Match icon size to text */
+            margin-top: -2px;
+        }
         /* Floating Action Button (FAB) Styling */
         .fab {
             display: none;
@@ -216,7 +233,11 @@
 
 <body>
     <header class="app-header">
-        <h1 class="brand-title">CityPulse</h1>
+        <!-- <h1 class="brand-title">CityPulse</h1> -->
+            <h1 class="brand-title">
+            <span class="material-icons">signal_cellular_alt</span>
+            CityPulse
+        </h1>
         <nav class="nav-actions">
             <a href="{% url 'report_issue' %}" class="btn btn-primary">Report Issue</a>
 
@@ -309,8 +330,8 @@
             opacity: 0.95,
             gradient: {
                 0.1: 'cyan',
-                0.3: 'lime',
-                0.6: 'yellow',
+                0.3: 'orange',
+                0.6: 'orange',
                 0.8: 'red',
                 1.0: 'red'
             }

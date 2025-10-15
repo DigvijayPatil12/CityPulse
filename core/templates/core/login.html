@@ -33,6 +33,11 @@
             font-weight: bold;
             font-size: 1.1rem;
         }
+        
+        /* Added cursor for better UX */
+        .mode-toggles span { 
+            cursor: pointer;
+        }
 
         .mode-toggles span.active {
             text-decoration: underline; 
@@ -98,12 +103,14 @@
 <body>
     <div class="login-container">
         <div class="mode-toggles">
-            <span class="active">user</span> 
-            <span>admin</span>
+            <span id="user-mode" class="active">user</span> 
+            <span id="admin-mode">admin</span>
         </div>
 
         <form method="post" action="{% url 'login' %}">
             {% csrf_token %}
+            
+            <input type="hidden" name="login_role" id="login_role_input" value="user">
             
             <label for="{{ form.username.id_for_label }}">username</label>
             {{ form.username }} 
@@ -111,8 +118,12 @@
             <label for="{{ form.password.id_for_label }}">Password</label>
             {{ form.password }}
 
-            {% if form.errors %}
-                <p class="error-message">Your username and password didn't match. Please try again.</p>
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <p class="error-message">{{ error }}</p>
+                {% endfor %}
+            {% elif form.errors %}
+                 <p class="error-message">Your username and password didn't match. Please try again.</p>
             {% endif %}
 
             <button type="submit" class="log-in-btn">log in</button>
@@ -123,9 +134,46 @@
 
         </form>
 
-        <p class="signup-link">
+        <p class="signup-link" id="signup-link-container">
             not a user? <a href="{% url 'signup' %}">sign up</a>
         </p>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMode = document.getElementById('user-mode');
+            const adminMode = document.getElementById('admin-mode');
+            const roleInput = document.getElementById('login_role_input');
+            const signupLinkContainer = document.getElementById('signup-link-container'); 
+
+            // Assuming default Django form IDs for clearing fields
+            const usernameField = document.getElementById('id_username'); 
+            const passwordField = document.getElementById('id_password'); 
+
+            function setActiveMode(mode) {
+                if (mode === 'user') {
+                    userMode.classList.add('active');
+                    adminMode.classList.remove('active');
+                    roleInput.value = 'user'; // Set hidden input value
+                    signupLinkContainer.style.display = 'block'; 
+                } else if (mode === 'admin') {
+                    adminMode.classList.add('active');
+                    userMode.classList.remove('active');
+                    roleInput.value = 'admin'; // Set hidden input value
+                    signupLinkContainer.style.display = 'none';
+                }
+                
+                // Clear fields on mode switch for better UX
+                if (usernameField) usernameField.value = '';
+                if (passwordField) passwordField.value = '';
+            }
+            
+            userMode.addEventListener('click', () => setActiveMode('user'));
+            adminMode.addEventListener('click', () => setActiveMode('admin'));
+            
+            // Set initial state based on the value attribute of the role input (default is 'user')
+            setActiveMode(roleInput.value);
+        });
+    </script>
 </body>
 </html>
