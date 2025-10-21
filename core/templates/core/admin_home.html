@@ -3,27 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .dashboard-container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background-color: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+        }
+        .admin-header {
+            color: #dc3545; /* Red/Maroon for admin tone */
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .main-link {
+            font-weight: 500;
+            color: #007bff; /* Primary blue */
+            text-decoration: none;
+            display: inline-block;
+            padding: 5px 0;
+            transition: color 0.2s;
+        }
+        .main-link:hover {
+            text-decoration: underline;
+            color: #0056b3;
+        }
+        ul {
+            list-style: disc; /* Use discs for clarity */
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .logout-btn {
+            background: none; 
+            border: none; 
+            color: #6c757d; /* Dark gray for secondary action */
+            cursor: pointer; 
+            text-decoration: underline; 
+            padding: 0; 
+            font-size: 1em;
+        }
+        .logout-btn:hover {
+            color: #dc3545; /* Red on hover */
+        }
+    </style>
 </head>
 <body>
-    <h1 style="color: red; border-bottom: 2px solid red; padding-bottom: 10px;">ADMIN DASHBOARD</h1>
-    <h2>Welcome, {{ user.first_name }}! (Staff Access)</h2>
-    
-    <p>You have access to extended system functionalities:</p>
-    
-    <ul>
-        <li><a href="{% url 'admin:index' %}">Go to Django Admin Interface</a> (For full data management)</li>
-        <li>Manage Users</li>
-        <li>System Configuration</li>
-        <li>View All Reports</li>
-    </ul>
+    <div class="dashboard-container">
+        <h1 class="admin-header">ADMIN DASHBOARD</h1>
+        <h2>Welcome, {{ user.first_name|default:user.username }}! (Staff Access)</h2>
+        
+        <p>You have access to extended system functionalities:</p>
+        
+        <ul>
+            <li>
+                <a href="{% url 'admin:index' %}" class="main-link">
+                    Go to **Django Admin Interface**
+                </a> (For full data management)
+            </li>
+            
+            <li>
+                <a href="{% url 'all_issues' %}" class="main-link">
+                    View All Reported Issues (Management Dashboard)
+                </a>
+            </li>
 
-    <hr style="margin: 20px 0;">
-    
-    <form method="post" action="{% url 'logout' %}" style="display: inline;">
-        {% csrf_token %}
-        <button type="submit" style="background: none; border: none; color: blue; cursor: pointer; text-decoration: underline; padding: 0; font-size: 1em;">
-            Log Out
-        </button>
-    </form>
+            <li>Manage Users (Future Feature)</li>
+            <li>System Configuration (Future Feature)</li>
+        </ul>
+
+        <hr style="margin: 20px 0;">
+        
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">
+                Log Out
+            </button>
+        </form>
+    </div>
 </body>
 </html>

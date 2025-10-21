@@ -29,4 +29,9 @@ urlpatterns = [
      # 7. USER PROFILE PAGE (ADD THIS NEW LINE)
     path('profile/', views.user_profile, name='profile'),
 
+    # 8. NEW: ALL ISSUES LIST PAGE (Staff Only Access)
+    path('issues/', views.all_issues_list, name='all_issues'),
+
+
+
 ]

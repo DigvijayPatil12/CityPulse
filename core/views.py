@@ -1,7 +1,7 @@
 # core/views.py
 
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.conf import settings
 from django.views.generic.edit import CreateView 
 from django.urls import reverse_lazy           
@@ -135,3 +135,21 @@ def user_profile(request):
     }
     
     return render(request, 'core/profile.html', context)
+
+# Helper function to check if a user is staff
+def is_staff_user(user):
+    return user.is_staff
+
+@login_required
+@user_passes_test(is_staff_user) # Only staff users can access this page
+def all_issues_list(request):
+    """
+    Retrieves all reported issues for display on a staff-only dashboard.
+    """
+    # Fetch all issues, ordered by the most recently reported
+    issues = IssueReport.objects.select_related('reporter').order_by('-reported_at')
+    
+    context = {
+        'issues': issues
+    }
+    return render(request, 'core/issue_list.html', context)

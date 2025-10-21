@@ -1,0 +1,72 @@
+{% extends "core/base.html" %} 
+{% load static %}
+
+{% block title %}All Reported Issues{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">All Reported Issues</h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if issues %}
+    <p>Total Issues: <strong>{{ issues|length }}</strong></p>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Type</th>
+                    <th>Location (Lat/Lon)</th>
+                    <th>Status</th>
+                    <th>Reported By</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Images</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in issues %}
+                <tr>
+                    <td>{{ issue.id }}</td>
+                    <td>{{ issue.get_issue_type_display }}</td>
+                    <td>
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ issue.latitude }},{{ issue.longitude }}" target="_blank" title="View on map">
+                            ({{ issue.latitude }}, {{ issue.longitude }})
+                        </a>
+                    </td>
+                    <td><span class="badge 
+                        {% if issue.status == 'Resolved' %}bg-success
+                        {% elif issue.status == 'In Progress' %}bg-warning text-dark
+                        {% else %}bg-danger{% endif %}">
+                        {{ issue.status }}
+                    </span></td>
+                    <td>{{ issue.reporter.username|default:"Anonymous" }}</td>
+                    <td>{{ issue.reported_at|date:"M d, Y H:i" }}</td>
+                    <td>{{ issue.description|truncatechars:50 }}</td>
+                    <td>
+                        {% for image in issue.images.all %}
+                            <a href="{{ image.image.url }}" target="_blank">View Photo {{ forloop.counter }}</a>
+                            {% if not forloop.last %}<br>{% endif %}
+                        {% empty %}
+                            No Images
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        No issues have been reported yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}
