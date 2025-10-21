@@ -150,6 +150,8 @@
             const progressSteps = [...document.querySelectorAll('.progress-step')];
             const errorMessage = document.getElementById('error-message');
             let currentStep = 0;
+            // Get longitude input element for map setting
+            const lonInput = document.getElementById('longitude'); 
 
             const subCategoryData = {
                 garbage: ['Bin overflowing', 'Illegal dumping', 'Uncollected trash'],
@@ -214,7 +216,8 @@
                     }
                 }
                 if (stepIndex === 1) {
-                    if (latInput.value === '') {
+                    // Check if latitude and longitude hidden fields have been set
+                    if (latInput.value === '' || lonInput.value === '') { 
                         errorMessage.textContent = 'Please set the issue location on the map.';
                         return false;
                     }
@@ -222,12 +225,35 @@
                 return true;
             }
 
+            // CRITICAL FIX: Updated finalValidation to check ALL required steps (1, 2, and 3)
             window.finalValidation = function() {
-                if (descriptionInput.value.trim() === '') {
-                    errorMessage.textContent = 'Please add a description before submitting.';
-                    return false; // Prevent form submission
+                errorMessage.textContent = ''; // Clear previous errors
+
+                // 1. Validate Step 1 (Issue Type)
+                if (!validateStep(0)) {
+                    // Setting currentStep back to 0 visually guides the user
+                    currentStep = 0; 
+                    updateFormSteps();
+                    errorMessage.textContent = 'Please select an issue type (Step 1).';
+                    return false; 
                 }
-                return true; // Allow form submission
+                
+                // 2. Validate Step 2 (Location)
+                if (!validateStep(1)) {
+                    currentStep = 1;
+                    updateFormSteps();
+                    errorMessage.textContent = 'Please set the issue location on the map (Step 2).';
+                    return false; 
+                }
+
+                // 3. Validate Step 3 (Description)
+                if (descriptionInput.value.trim() === '') {
+                    errorMessage.textContent = 'Please add a description before submitting (Step 3).';
+                    return false; 
+                }
+                
+                // All checks passed
+                return true; // Allow form submission to Django view
             }
             
             // --- INTERACTIVE MAP (with initialization fix) ---

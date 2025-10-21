@@ -6,100 +6,132 @@ from django.conf import settings
 from django.views.generic.edit import CreateView 
 from django.urls import reverse_lazy           
 from django.contrib.auth.views import LoginView
-from django.contrib.auth import login # Import the login function
+from django.contrib.auth import login 
 from django.contrib import messages             
 from .forms import CustomUserCreationForm 
 
+# === NEW IMPORTS FOR DATABASE HANDLING ===
+from .models import IssueReport, IssueImage # Assuming you defined these models in core/models.py
+# =======================================
 
 # ----------------------------------------------------------------------
 # 1. CONSOLIDATED LOGIN VIEW (Handles both user and admin)
 # ----------------------------------------------------------------------
-# Renamed from UserLoginView
 class LoginView(LoginView):
     template_name = 'core/login.html'
-    # success_url is no longer needed here, we handle redirect manually
 
     def form_valid(self, form):
-        # 1. Get the authenticated user
         user = form.get_user()
-        
-        # 2. Determine the intended role from the hidden input field
         login_role = self.request.POST.get('login_role', 'user')
 
-        # 3. Handle Admin Login flow
         if login_role == 'admin':
             if user.is_staff:
-                # Log the user in
                 login(self.request, user) 
-                # Redirect to admin home
                 return redirect('admin_home')
             else:
-                # If not staff, add a non-field error and return to the form
                 error_message = "Invalid credentials or lack of administrative privileges."
                 form.add_error(None, error_message)
                 return self.form_invalid(form)
         
-        # 4. Handle Standard User Login flow ('user' role)
         else: # login_role == 'user'
-            # The base LoginView handles the login and sets the default success_url
-            # to settings.LOGIN_REDIRECT_URL if no 'next' param exists.
-            # However, since we defined 'home' in urls.py, we redirect manually for clarity.
             login(self.request, user)
             return redirect('home')
 
 # ----------------------------------------------------------------------
-# 2. REMOVE AdminLoginView 💥
-# ----------------------------------------------------------------------
-# ... (Remove the AdminLoginView class entirely) ...
-
-# ----------------------------------------------------------------------
-# 3. USER HOME PAGE VIEW
+# 2. USER HOME PAGE VIEW
 # ----------------------------------------------------------------------
 @login_required 
 def home_page(request):
-    # This is the view for the home page (/).
     return render(request, 'core/home.html', {'user': request.user})
 
 
 # ----------------------------------------------------------------------
-# 4. ADMIN HOME PAGE VIEW (Must still protect against unauthorized access)
+# 3. ADMIN HOME PAGE VIEW
 # ----------------------------------------------------------------------
-# ... (This remains unchanged) ...
 @login_required
 def admin_home_page(request):
-    # Security check: only allow access if the user is staff
     if not request.user.is_staff:
-        # Redirect non-admins back to the user home
         return redirect('home') 
         
     return render(request, 'core/admin_home.html', {'user': request.user})
 
 
 # ----------------------------------------------------------------------
-# 5. OTHER VIEWS (Unchanged)
+# 4. REPORT ISSUE VIEW (UPDATED to handle POST and database storage)
 # ----------------------------------------------------------------------
-# ... (report_issue_view and SignUpView remain unchanged) ...
 @login_required 
 def report_issue_view(request):
-    return render(request, 'core/report_issue.html', {}) 
+    if request.method == 'POST':
+        # 1. Extract and validate required data from the POST request
+        issue_type = request.POST.get('issue_type')
+        description = request.POST.get('description')
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
 
+        if not all([issue_type, description, latitude, longitude]):
+            messages.error(request, 'Missing required fields for issue type, location, or description.')
+            # Re-render the form on error
+            return render(request, 'core/report_issue.html')
+
+        try:
+            # 2. Save the main IssueReport object
+            new_issue = IssueReport.objects.create(
+                # Automatically links to the logged-in user due to @login_required
+                reporter=request.user, 
+                issue_type=issue_type,
+                sub_category=request.POST.get('sub_category'), # Optional
+                latitude=float(latitude),
+                longitude=float(longitude),
+                description=description,
+            )
+            
+            # 3. Handle image uploads (up to 3 files)
+            images = request.FILES.getlist('issue_images')
+            for image_file in images:
+                if len(new_issue.images.all()) < 3: # Server-side max limit
+                    IssueImage.objects.create(issue=new_issue, image=image_file)
+
+            # 4. Success message and redirect
+            messages.success(request, 'Your issue has been successfully reported!')
+            return redirect('home') # Redirect to home or a success page
+
+        except ValueError:
+            # Handle cases where latitude/longitude conversion fails
+            messages.error(request, 'Invalid location coordinates submitted.')
+        except Exception as e:
+            # General error handling
+            messages.error(request, f'An unexpected server error occurred: {e}')
+
+        # Fallback to re-render the form with error messages
+        return render(request, 'core/report_issue.html')
+
+    # For GET requests (display the form)
+    return render(request, 'core/report_issue.html') 
+# ----------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------
+# 5. OTHER VIEWS
+# ----------------------------------------------------------------------
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('login') 
     template_name = 'core/signup.html'
 
-# ======================================================================
-# 6. USER PROFILE VIEW (NEW - Add this entire function)
-# ======================================================================
+# ----------------------------------------------------------------------
+# 6. USER PROFILE VIEW
+# ----------------------------------------------------------------------
 @login_required
 def user_profile(request):
     """
     Displays the user's profile page with their stats and activity.
+    Now, we can fetch the user's reported issues.
     """
-    # This is where you will later add logic to fetch the user's reported issues
-    # from the database. For now, it just shows the page.
-    # Example logic to add later:
-    # reported_issues = Issue.objects.filter(reporter=request.user)
-    # context = {'reported_issues': reported_issues}
+    # Fetch issues reported by the current user
+    reported_issues = IssueReport.objects.filter(reporter=request.user).order_by('-reported_at')
     
-    return render(request, 'core/profile.html', {}) # The context is empty for now
+    context = {
+        'reported_issues': reported_issues
+    }
+    
+    return render(request, 'core/profile.html', context)

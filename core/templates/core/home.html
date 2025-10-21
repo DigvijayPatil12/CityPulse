@@ -39,6 +39,31 @@
         }
 
         /* Header & Navigation */
+        @media (max-width: 500px) {
+            .app-header {
+                /* Reduce horizontal padding on mobile */
+                padding: 0 12px;
+             }
+
+            .brand-title {
+                /* Reduce title font size */
+                font-size: 1.4rem;
+                gap: 5px;
+                /* Reduce gap between icon and text */
+            }
+
+            .brand-title .material-icons {
+                /* Reduce icon size */
+                font-size: 1.6rem;
+            }
+
+            /* Bonus: You'll probably want to shrink your button too */
+            .nav-actions .btn {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+        }
+
         .app-header {
             display: flex;
             justify-content: space-between;
@@ -163,9 +188,11 @@
             height: 100%;
             border-radius: 12px;
         }
-.brand-title {
+
+        .brand-title {
             font-size: 1.8rem;
-            font-weight: 700; /* Bolder font */
+            font-weight: 700;
+            /* Bolder font */
             letter-spacing: -0.5px;
             display: flex;
             align-items: center;
@@ -177,10 +204,13 @@
             background-clip: text;
             /* text-fill-color: transparent; */
         }
+
         .brand-title .material-icons {
-            font-size: 2rem; /* Match icon size to text */
+            font-size: 2rem;
+            /* Match icon size to text */
             margin-top: -2px;
         }
+
         /* Floating Action Button (FAB) Styling */
         .fab {
             display: none;
@@ -228,13 +258,14 @@
                 padding: 0 15px;
             }
         }
+        
     </style>
 </head>
 
 <body>
     <header class="app-header">
         <!-- <h1 class="brand-title">CityPulse</h1> -->
-            <h1 class="brand-title">
+        <h1 class="brand-title">
             <span class="material-icons">signal_cellular_alt</span>
             CityPulse
         </h1>
@@ -245,14 +276,14 @@
                 <button id="user-menu-button" aria-haspopup="true" aria-expanded="false">
                     <span class="material-icons">person</span>
                 </button>
-               <div id="dropdown-menu" class="dropdown-content">
-    <a href="{% url 'profile' %}">View Profile</a>
-    <a href="#">My Reports</a>
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="logout-btn">Log Out</button>
-    </form>
-</div>
+                <div id="dropdown-menu" class="dropdown-content">
+                    <a href="{% url 'profile' %}">View Profile</a>
+                    <a href="#">My Reports</a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-btn">Log Out</button>
+                    </form>
+                </div>
         </nav>
     </header>
 
@@ -295,7 +326,7 @@
         // --- Initialize Map ---
         var map = L.map('map', {
             center: [22.3145, 87.3093],
-            zoom: 15,
+            zoom: 100,
             layers: [streetMap] // Default base layer
         });
 

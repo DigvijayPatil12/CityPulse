@@ -121,3 +121,7 @@ LOGIN_URL = 'login'
 # The page to redirect to after a user successfully logs in.
 # It now points to the 'role_redirect' view to check if the user is an admin or a standard user.
 LOGIN_REDIRECT_URL = 'role_redirect'
+
+# Media files (uploaded files like images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
