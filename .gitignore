@@ -6,15 +6,25 @@ __pycache__/
 *~
 
 # Virtual Environment
-DAP/ # <-- Make sure this matches your virtual env folder name
+DAP/
 venv/
 env/
 
 # Django specific
 db.sqlite3
-/media
-/static
-.DS_Store
 
-#sensitive
+# Directory for user-uploaded media files (should use a separate storage service)
+/media/
+
+# This is built on the server, so it should not be tracked in Git.
+staticfiles/
+
+# Logs and system files
+*.log
+.DS_Store
+.vscode/
+
+# Sensitive files that should ONLY be on your local machine
+# or handled via environment variables on Render.
 login info
+.env
