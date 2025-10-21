@@ -5,168 +5,226 @@
     <meta charset="UTF-8">
     <title>CityPulse Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <script src="https://cdn.tailwindcss.com"></script> 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <style>
         :root {
-            --primary-color: #007bff; /* CityPulse Blue */
-            --alert-color: #e3342f;   /* Report/Error Red */
-            --bg-color: #f0f4f8;      /* Light gray-blue background */
-            --shadow-color: rgba(0, 0, 0, 0.1);
+            --primary-color: #007bff;
+            --primary-light: #e6f2ff;
+            --background-color: #f0f4f8; /* Light gray-blue background */
+            --card-background: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --error-color: #dc3545;
+            --error-light: #fbebee;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            --border-radius: 16px;
+        }
+
+        /* Base & Reset */
+        * {
+            box-sizing: border-box;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            color: var(--text-primary);
+            background-color: var(--card-background); /* White background on mobile */
             margin: 0;
-            background-color: var(--bg-color); 
+            /* Flex layout for desktop centering */
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Aligns content to top on mobile */
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         .login-container {
-            background: #ffffff;
             width: 100%;
-            max-width: 380px; /* Wider container */
-            padding: 35px;
-            border-radius: 12px; 
-            box-shadow: 0 10px 30px var(--shadow-color); /* Soft shadow */
-            border: 1px solid #e0e0e0;
+            padding: 0 20px;
         }
-
+        
+        /* --- BRAND HEADER --- */
         .brand-header {
             text-align: center;
-            margin-bottom: 30px;
+            padding: 60px 0 40px 0;
         }
-
         .brand-title {
-            font-size: 2rem;
+            font-size: 2.5rem; /* Larger title */
             font-weight: 700;
             color: var(--primary-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+        }
+        .brand-title .material-icons {
+            font-size: 3rem; /* Larger icon */
         }
 
-        /* Toggle Styling */
+        /* --- BEAUTIFUL MODE TOGGLES --- */
         .mode-toggles {
             display: flex;
-            justify-content: space-around;
-            margin-bottom: 25px;
-            padding: 5px 0;
-            border-bottom: 2px solid #ddd; /* Separator line */
-            font-weight: 600;
-            font-size: 1rem;
-            color: #555;
+            background-color: var(--background-color);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 30px;
         }
-        
-        .mode-toggles span { 
+        .mode-toggle {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
             cursor: pointer;
-            padding: 5px 10px;
-            transition: color 0.2s;
+            transition: all 0.2s ease-in-out;
         }
-
-        .mode-toggles span.active {
+        .mode-toggle.active {
+            background-color: var(--card-background);
             color: var(--primary-color);
-            border-bottom: 3px solid var(--primary-color); /* Highlight active mode */
-            text-decoration: none; /* Remove default underline */
-            padding-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
-        /* Form & Input Styling */
-        form label {
+        /* --- STYLED FORM & INPUTS --- */
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
             display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            font-size: 0.85em;
-            font-weight: 600;
-            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
         }
-
-        input[type="text"],
-        input[type="password"] {
+        .form-control {
             width: 100%;
-            padding: 10px 12px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc; 
-            border-radius: 6px;
-            box-sizing: border-box;
-            outline: none; 
-            transition: border-color 0.2s;
+            padding: 14px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            /* Light gray background to stand out on mobile's white screen */
+            background-color: var(--background-color); 
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-
-        input[type="text"]:focus,
-        input[type="password"]:focus {
+        .form-control::placeholder {
+            color: var(--text-secondary);
+        }
+        .form-control:focus {
+            outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 1px var(--primary-color);
+            background-color: var(--card-background);
+            box-shadow: 0 0 0 4px var(--primary-light);
         }
 
+        /* --- ERROR MESSAGE --- */
+        .error-message-box {
+            background-color: var(--error-light);
+            color: var(--error-color);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        /* --- LOGIN BUTTON --- */
         .log-in-btn {
             width: 100%;
-            padding: 10px 15px;
+            padding: 16px;
             background-color: var(--primary-color); 
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-top: 25px;
+            margin-top: 15px;
             font-weight: 600;
-            font-size: 1em;
+            font-size: 1.05rem;
+            font-family: 'Poppins', sans-serif;
             transition: background-color 0.2s ease, transform 0.1s ease;
         }
-        
         .log-in-btn:hover {
             background-color: #0056b3;
         }
-        
         .log-in-btn:active {
-            transform: scale(0.99);
+            transform: scale(0.98);
         }
 
+        /* --- FOOTER SIGNUP LINK --- */
         .signup-link {
             text-align: center;
-            margin-top: 25px;
-            font-size: 0.9em;
-            color: #666;
+            margin-top: 30px;
+            padding-bottom: 30px; /* Space at bottom */
+            font-size: 0.95rem;
+            color: var(--text-secondary);
         }
-
         .signup-link a {
             color: var(--primary-color);
             text-decoration: none;
             font-weight: 600;
         }
-
         .signup-link a:hover {
             text-decoration: underline;
         }
         
-        .error-message {
-            color: var(--alert-color);
-            font-size: 0.8em;
-            margin-top: -5px;
-            margin-bottom: 15px;
-            font-weight: 500;
+        /* ----------------------------------- */
+        /* DESKTOP OVERRIDES (Tablet & up)   */
+        /* ----------------------------------- */
+        @media (min-width: 768px) {
+            body {
+                background-color: var(--background-color); /* Gray bg on desktop */
+                justify-content: center; /* Vertically center the card */
+            }
+
+            /* Restore the centered card */
+            .login-container {
+                width: 100%;
+                max-width: 420px; /* Wider, modern card */
+                padding: 40px;
+                border-radius: var(--border-radius);
+                background-color: var(--card-background);
+                box-shadow: var(--shadow);
+                border: 1px solid var(--border-color);
+            }
+
+            .brand-header {
+                padding: 0 0 30px 0; /* Less padding inside card */
+            }
+
+            .form-control {
+                /* On desktop, inputs are white to contrast with white card bg */
+                background-color: var(--card-background); 
+            }
+
+            .signup-link {
+                padding-bottom: 0; /* No extra padding needed */
+            }
         }
     </style>
 </head>
 <body>
+
     <div class="login-container">
         
         <header class="brand-header">
             <h1 class="brand-title">
-                <span class="material-icons" style="font-size: 2.2rem;">report</span>
-                CityPulse
+                <span class="material-icons">maps_home_work</span> CityPulse
             </h1>
         </header>
 
         <div class="mode-toggles">
-            <span id="user-mode" class="active">USER</span> 
-            <span id="admin-mode">ADMIN</span>
+            <button id="user-mode" class="mode-toggle active">USER</button> 
+            <button id="admin-mode" class="mode-toggle">ADMIN</button>
         </div>
 
         <form method="post" action="{% url 'login' %}">
@@ -174,19 +232,24 @@
             
             <input type="hidden" name="login_role" id="login_role_input" value="user">
             
-            <label for="{{ form.username.id_for_label }}">Username</label>
-            {{ form.username }} 
-
-            <label for="{{ form.password.id_for_label }}">Password</label>
-            {{ form.password }}
-
-            {% if form.non_field_errors %}
-                {% for error in form.non_field_errors %}
-                    <p class="error-message">{{ error }}</p>
-                {% endfor %}
-            {% elif form.errors %}
-                 <p class="error-message">Invalid credentials. Please check your username and password.</p>
+            {% if form.non_field_errors or form.errors %}
+                <div class="error-message-box">
+                    Invalid credentials. Please check your username and password.
+                </div>
             {% endif %}
+
+            <div class="form-group">
+                <label for="id_username">Username</label>
+                <input type="text" name="username" class="form-control" id="id_username" 
+                       placeholder="Enter your username" required 
+                       value="{{ form.username.value|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="id_password">Password</label>
+                <input type="password" name="password" class="form-control" id="id_password" 
+                       placeholder="Enter your password" required>
+            </div>
 
             <button type="submit" class="log-in-btn">LOG IN</button>
 
@@ -207,10 +270,9 @@
             const adminMode = document.getElementById('admin-mode');
             const roleInput = document.getElementById('login_role_input');
             const signupLinkContainer = document.getElementById('signup-link-container'); 
-
-            // Assuming default Django form IDs for clearing fields
             const usernameField = document.getElementById('id_username'); 
             const passwordField = document.getElementById('id_password'); 
+            const errorBox = document.querySelector('.error-message-box');
 
             function setActiveMode(mode) {
                 if (mode === 'user') {
@@ -225,9 +287,10 @@
                     signupLinkContainer.style.display = 'none';
                 }
                 
-                // Clear fields on mode switch for better UX
+                // Clear fields and error on mode switch
                 if (usernameField) usernameField.value = '';
                 if (passwordField) passwordField.value = '';
+                if (errorBox) errorBox.style.display = 'none';
             }
             
             userMode.addEventListener('click', () => setActiveMode('user'));

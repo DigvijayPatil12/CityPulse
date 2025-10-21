@@ -1,90 +1,289 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CityPulse</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
-        .dashboard-container { 
-            max-width: 800px; 
-            margin: 0 auto; 
-            background-color: white; 
-            padding: 30px; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+        :root {
+            /* Site Colors */
+            --primary-color: #007bff;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-light: #eef2f7;
+            --border-color: #dee2e6;
+            
+            /* Admin Theme Colors */
+            --admin-color: #dc3545; /* Your original red */
+            --admin-light: #fbebee;  /* A light bg tint for the red */
+            
+            --shadow: 0 4px 12px rgba(0,0,0,0.06);
+            --border-radius: 16px;
         }
-        .admin-header {
-            color: #dc3545; /* Red/Maroon for admin tone */
-            border-bottom: 2px solid #dc3545;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+
+        /* Base & Reset */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--card-background); /* App-like white bg on mobile */
+            color: var(--text-primary);
+            margin: 0;
+            padding-top: 60px; /* Space for the fixed header */
+        }
+
+        /* App Header (Consistent with other pages) */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            height: 60px;
+            background-color: var(--card-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.25rem;
             font-weight: 600;
+            color: var(--admin-color); /* Admin color for title */
         }
-        .main-link {
-            font-weight: 500;
-            color: #007bff; /* Primary blue */
+        .brand-title .material-icons {
+            font-size: 1.6rem;
+        }
+
+        /* Header Logout Button */
+        .header-action-form {
+            margin: 0;
+        }
+        .header-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .header-action-btn:hover {
+            color: var(--admin-color);
+            background-color: var(--admin-light);
+        }
+        .header-action-btn .desktop-text {
+            display: none; /* Hide text on mobile */
+        }
+        .header-action-btn .material-icons {
+            font-size: 1.5rem;
+        }
+
+        /* --- Main Content (Mobile First) --- */
+        .dashboard-container {
+            padding: 20px;
+        }
+
+        .welcome-header {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+        }
+        .welcome-sub {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin: 0 0 30px 0;
+        }
+
+        /* --- Beautiful Nav List (Replaces <ul>) --- */
+        .nav-list {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--border-light);
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 10px;
+            border-bottom: 1px solid var(--border-light);
             text-decoration: none;
-            display: inline-block;
-            padding: 5px 0;
-            transition: color 0.2s;
+            color: var(--text-primary);
+            transition: background-color 0.2s ease;
         }
-        .main-link:hover {
-            text-decoration: underline;
-            color: #0056b3;
+        .nav-item:active {
+            background-color: var(--background-color); /* Tap feedback */
         }
-        ul {
-            list-style: disc; /* Use discs for clarity */
-            padding-left: 20px;
+        .nav-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--admin-light);
+            color: var(--admin-color);
+            margin-right: 15px;
+            flex-shrink: 0;
         }
-        li {
-            margin-bottom: 10px;
+        .nav-icon .material-icons {
+            font-size: 1.4rem;
         }
-        .logout-btn {
-            background: none; 
-            border: none; 
-            color: #6c757d; /* Dark gray for secondary action */
-            cursor: pointer; 
-            text-decoration: underline; 
-            padding: 0; 
-            font-size: 1em;
+        .nav-details {
+            flex-grow: 1;
         }
-        .logout-btn:hover {
-            color: #dc3545; /* Red on hover */
+        .nav-details p {
+            margin: 0;
+        }
+        .nav-title {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+        .nav-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .nav-chevron {
+            color: var(--border-color);
+            margin-left: 10px;
+        }
+
+        /* Disabled state for future items */
+        .nav-item.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+            user-select: none;
+        }
+        .nav-item.disabled .nav-icon {
+            background-color: var(--border-light);
+            color: var(--text-secondary);
+        }
+
+        /* ----------------------------------- */
+        /* DESKTOP OVERRIDES (Tablet & up)   */
+        /* ----------------------------------- */
+        @media (min-width: 768px) {
+            body {
+                background-color: var(--background-color); /* Gray bg on desktop */
+                padding-top: 65px; /* Adjust for header */
+            }
+            .app-header {
+                padding: 0 25px;
+                height: 65px;
+            }
+            .brand-title {
+                font-size: 1.6rem;
+            }
+
+            /* Restore the centered card */
+            .dashboard-container {
+                max-width: 800px;
+                margin: 30px auto;
+                background-color: var(--card-background);
+                padding: 30px 40px;
+                border-radius: var(--border-radius);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            }
+
+            /* Show logout text on desktop */
+            .header-action-btn {
+                border-radius: 8px;
+                padding: 8px 12px;
+                gap: 8px;
+            }
+            .header-action-btn .desktop-text {
+                display: inline;
+                font-weight: 500;
+                font-size: 0.9rem;
+            }
+
+            .nav-item:hover {
+                background-color: var(--background-color); /* Hover feedback */
+            }
+            .nav-item:active {
+                background-color: var(--border-light); /* Tap feedback */
+            }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <h1 class="admin-header">ADMIN DASHBOARD</h1>
-        <h2>Welcome, {{ user.first_name|default:user.username }}! (Staff Access)</h2>
-        
-        <p>You have access to extended system functionalities:</p>
-        
-        <ul>
-            <li>
-                <a href="{% url 'admin:index' %}" class="main-link">
-                    Go to **Django Admin Interface**
-                </a> (For full data management)
-            </li>
-            
-            <li>
-                <a href="{% url 'all_issues' %}" class="main-link">
-                    View All Reported Issues (Management Dashboard)
-                </a>
-            </li>
 
-            <li>Manage Users (Future Feature)</li>
-            <li>System Configuration (Future Feature)</li>
-        </ul>
-
-        <hr style="margin: 20px 0;">
+    <header class="app-header">
+        <h1 class="brand-title">
+            <span class="material-icons">admin_panel_settings</span>
+            Admin
+        </h1>
         
-        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+        <form method="post" action="{% url 'logout' %}" class="header-action-form">
             {% csrf_token %}
-            <button type="submit" class="logout-btn">
-                Log Out
+            <button type="submit" class="header-action-btn" title="Log Out">
+                <span class="material-icons">logout</span>
+                <span class="desktop-text">Log Out</span>
             </button>
         </form>
-    </div>
+    </header>
+
+    <main class="dashboard-container">
+        
+        <h2 class="welcome-header">Welcome, {{ user.first_name|default:user.username }}!</h2>
+        <p class="welcome-sub">You have staff access to system functions.</p>
+
+        <nav class="nav-list">
+            <a href="{% url 'admin:index' %}" class="nav-item">
+                <div class="nav-icon"><span class="material-icons">settings</span></div>
+                <div class="nav-details">
+                    <p class="nav-title">Django Admin Interface</p>
+                    <p class="nav-desc">Full data management</p>
+                </div>
+                <span class="material-icons nav-chevron">chevron_right</span>
+            </a>
+            
+            <a href="{% url 'all_issues' %}" class="nav-item">
+                <div class="nav-icon"><span class="material-icons">list_alt</span></div>
+                <div class="nav-details">
+                    <p class="nav-title">View All Reported Issues</p>
+                    <p class="nav-desc">Management dashboard</p>
+                </div>
+                <span class="material-icons nav-chevron">chevron_right</span>
+            </a>
+
+            <div class="nav-item disabled">
+                <div class="nav-icon"><span class="material-icons">people</span></div>
+                <div class="nav-details">
+                    <p class="nav-title">Manage Users</p>
+                    <p class="nav-desc">Future Feature</p>
+                </div>
+                <span class="material-icons nav-chevron">chevron_right</span>
+            </div>
+            
+            <div class="nav-item disabled">
+                <div class="nav-icon"><span class="material-icons">build_circle</span></div>
+                <div class="nav-details">
+                    <p class="nav-title">System Configuration</p>
+                    <p class="nav-desc">Future Feature</p>
+                </div>
+                <span class="material-icons nav-chevron">chevron_right</span>
+            </div>
+        </nav>
+
+    </main>
+
 </body>
 </html>
