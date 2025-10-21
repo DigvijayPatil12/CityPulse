@@ -8,7 +8,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,79 +16,382 @@
 
     <style>
         :root {
-            --primary-color: #007bff; --primary-hover: #0056b3;
-            --light-gray: #f4f7f6; --dark-gray: #6c757d;
-            --border-color: #ced4da; --error-color: #dc3545;
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --primary-light: #e6f2ff;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #ced4da;
+            --border-light: #eef2f7;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --shadow: 0 4px 12px rgba(0,0,0,0.06);
+            --border-radius: 12px;
         }
+
+        /* Base & Reset */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Poppins', sans-serif; background-color: var(--light-gray);
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; margin: 0; padding: 20px;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color); /* Gray background on desktop */
+            color: var(--text-primary);
+            margin: 0;
+            /* Add padding for the fixed header */
+            padding-top: 60px;
         }
+
+        /* App Header (Consistent with Profile Page) */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            height: 60px;
+            background-color: var(--card-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .cancel-link {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile-First Wizard Container */
         .wizard-container {
-            background-color: #ffffff; padding: 30px 40px; border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); width: 100%; max-width: 700px;
+            background-color: var(--card-background);
+            padding: 20px;
+            margin: 0;
+            /* On mobile, it's the whole page */
         }
+        
+        /* --- BEAUTIFUL NEW PROGRESS BAR --- */
         .progress-bar {
-            display: flex; justify-content: space-between; margin-bottom: 30px;
-            counter-reset: step;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .progress-line {
+            flex-grow: 1;
+            height: 2px;
+            background: var(--border-color);
+            margin: 20px 0; /* Aligns with center of icons */
+            transition: background 0.4s ease;
+        }
+        .progress-line.active {
+            background: var(--primary-color);
         }
         .progress-step {
-            width: 33.33%; text-align: center; position: relative;
-            color: var(--border-color); font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px; /* Give it space */
+            color: var(--text-secondary);
+            transition: color 0.4s ease;
         }
-        .progress-step::before {
-            content: counter(step); counter-increment: step;
-            width: 30px; height: 30px; line-height: 30px;
-            border: 2px solid var(--border-color); border-radius: 50%;
-            display: block; margin: 0 auto 10px; background-color: white;
-            transition: all 0.3s ease;
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-background);
+            color: var(--border-color);
+            transition: all 0.4s ease;
         }
-        .progress-step::after {
-            content: ''; width: 100%; height: 2px;
-            background-color: var(--border-color);
-            position: absolute; top: 15px; left: -50%; z-index: -1;
-            transition: all 0.3s ease;
+        .step-icon .material-icons {
+            font-size: 20px;
         }
-        .progress-step:first-child::after { content: none; }
-        .progress-step.active { color: var(--primary-color); }
-        .progress-step.active::before { border-color: var(--primary-color); background-color: var(--primary-color); color: white; }
-        .progress-step.active::after { background-color: var(--primary-color); }
+        .progress-step p {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 8px 0 0;
+            text-align: center;
+        }
+        
+        /* Active State for Progress Bar */
+        .progress-step.active {
+            color: var(--text-primary);
+        }
+        .progress-step.active .step-icon {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
 
+        /* Form Steps */
         .form-step { display: none; }
-        .form-step.active { display: block; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .form-step h2 { font-weight: 600; margin-bottom: 20px; text-align: center; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
-        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
-        textarea.form-control { resize: vertical; min-height: 100px; }
-        .btn {
-            padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600;
-            font-size: 1rem; cursor: pointer; transition: all 0.2s ease;
+        .form-step.active {
+            display: block;
+            animation: fadeIn 0.5s;
         }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-secondary { background-color: #6c757d; color: white; }
-        .buttons-group { display: flex; justify-content: space-between; margin-top: 30px; }
-        #map { height: 300px; width: 100%; border-radius: 8px; margin-top: 15px; }
-        #image-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        #image-previews img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .form-step h2 {
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* --- STYLED FORM CONTROLS --- */
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        /* Custom Select Arrow */
+        select.form-control {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* --- STYLED FILE UPLOAD --- */
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .file-upload-label:hover {
+            background-color: #fdfdfd;
+            border-color: var(--primary-color);
+        }
+        .file-upload-label .material-icons {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+        .file-upload-label span {
+            font-weight: 500;
+            margin-top: 10px;
+        }
         .hidden { display: none; }
-        #error-message { color: var(--error-color); text-align: center; margin-top: 15px; font-weight: 500; min-height: 20px; }
+
+        #image-previews {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        #image-previews img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* --- STYLED BUTTONS --- */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%; /* Mobile first */
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        /* New outline button for "Get Location" */
+        .btn-outline {
+            background-color: var(--card-background);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+        .btn-outline:hover {
+            background-color: var(--primary-light);
+        }
+        .btn-secondary {
+            background-color: var(--text-secondary);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn .material-icons {
+            font-size: 1.25rem;
+        }
+
+        .buttons-group {
+            display: flex;
+            flex-direction: column; /* Stack on mobile */
+            gap: 10px;
+            margin-top: 30px;
+        }
+        /* On mobile, only show "Next" if "Prev" is disabled */
+        #prev-btn[disabled] {
+            display: none;
+        }
+        
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            z-index: 1;
+        }
+        #get-location-btn {
+            margin-bottom: 15px; /* Space between button and map */
+        }
+        
+        #error-message {
+            color: var(--error-color);
+            text-align: center;
+            margin-top: 15px;
+            font-weight: 500;
+            min-height: 20px;
+        }
+
+        /* ----------------------------------- */
+        /* DESKTOP OVERRIDES (Tablet & up)   */
+        /* ----------------------------------- */
+        @media (min-width: 768px) {
+            .app-header {
+                padding: 0 25px;
+            }
+            .brand-title {
+                font-size: 1.6rem;
+            }
+            .cancel-link {
+                font-size: 1rem;
+            }
+            
+            /* Restore the centered card look on desktop */
+            .wizard-container {
+                max-width: 700px;
+                margin: 30px auto;
+                padding: 30px 40px;
+                border-radius: 16px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            }
+            
+            .progress-step {
+                width: 100px; /* More space on desktop */
+            }
+            .progress-step p {
+                font-size: 0.9rem;
+            }
+
+            .buttons-group {
+                flex-direction: row; /* Side-by-side on desktop */
+                justify-content: space-between;
+            }
+            .buttons-group .btn {
+                width: auto;
+                min-width: 120px;
+            }
+            /* Always show "Prev" on desktop, even if disabled */
+            #prev-btn[disabled] {
+                display: flex;
+                background-color: #e9ecef;
+                color: var(--text-secondary);
+                cursor: not-allowed;
+            }
+            #prev-btn[disabled]:active {
+                transform: none;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="wizard-container">
+
+    <header class="app-header">
+        <h1 class="brand-title">Report an Issue</h1>
+        <a href="{% url 'home' %}" class="cancel-link">Cancel</a>
+    </header>
+
+    <main class="wizard-container">
+        
         <div class="progress-bar">
-            <div class="progress-step active" data-title="Issue"></div>
-            <div class="progress-step" data-title="Location"></div>
-            <div class="progress-step" data-title="Details"></div>
+            <div class="progress-step active" data-title="Issue">
+                <div class="step-icon"><span class="material-icons">task</span></div>
+                <p>Issue</p>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-title="Location">
+                <div class="step-icon"><span class="material-icons">location_on</span></div>
+                <p>Location</p>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-title="Details">
+                <div class="step-icon"><span class="material-icons">edit_note</span></div>
+                <p>Details</p>
+            </div>
         </div>
-        <form id="reportForm" method="post" action="{% url 'report_issue' %}" enctype="multipart/form-data" onsubmit="return finalValidation()">
+
+        <form id="reportForm" method="post" action="{% url 'report_issue' %}" enctype="multipart-form-data" onsubmit="return finalValidation()">
             {% csrf_token %}
+            
             <div class="form-step active">
-                <h2>Step 1: What is the issue?</h2>
+                <h2>Step 1: What's the issue?</h2>
                 <div class="form-group">
                     <label for="issue-type">Type of Issue</label>
                     <select name="issue_type" id="issue-type" class="form-control" required>
@@ -96,21 +399,27 @@
                         <option value="garbage">Garbage</option>
                         <option value="pothole">Pothole</option>
                         <option value="waterlogging">Waterlogging</option>
-                        <option value="street_light">Broken Streetlight</option>
+                        <option value="electricity_issue">Electricity Issue</option>
+                        <option value="stray_animal">Stray Animal</option>
+                        <option value="other">Other (Please specify)</option>
                     </select>
                 </div>
                 <div class="form-group hidden" id="sub-category-group">
                     <label for="sub-category">Sub-Category</label>
                     <select name="sub_category" id="sub-category" class="form-control"></select>
                 </div>
+                <div class="form-group hidden" id="other-issue-group">
+                    <label for="other-issue-text">Please specify the issue</label>
+                    <input type="text" name="other_issue_text" id="other-issue-text" class="form-control" placeholder="e.g., Fallen Tree, Broken Bench">
+                </div>
             </div>
 
             <div class="form-step">
-                <h2>Step 2: Where is the issue?</h2>
+                <h2>Step 2: Where is it?</h2>
                 <div class="form-group">
-                    <label>Click button or drag the pin to set the exact location.</label>
-                    <button type="button" class="btn btn-primary" id="get-location-btn">
-                        <span class="material-icons" style="vertical-align: middle; font-size: 1.2rem;">my_location</span>
+                    <label>Pin the exact location on the map.</label>
+                    <button type="button" class="btn btn-outline" id="get-location-btn">
+                        <span class="material-icons">my_location</span>
                         Use My Current Location
                     </button>
                     <div id="map"></div>
@@ -118,14 +427,17 @@
             </div>
 
             <div class="form-step">
-                <h2>Step 3: Add Details & Photos</h2>
+                <h2>Step 3: Add Details</h2>
                 <div class="form-group">
                     <label for="description">Description (Required)</label>
                     <textarea name="description" id="description" class="form-control" placeholder="Provide any extra details..." required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="issue-images">Upload Photos (Optional, up to 3)</label>
-                    <input type="file" name="issue_images" id="issue-images" class="form-control" multiple accept="image/*">
+                    <label for="issue-images" class="file-upload-label">
+                        <span class="material-icons">upload</span>
+                        <span>Upload Photos (Optional, up to 3)</span>
+                    </label>
+                    <input type="file" name="issue_images" id="issue-images" class="hidden" multiple accept="image/*">
                     <div id="image-previews"></div>
                 </div>
             </div>
@@ -133,41 +445,49 @@
             <div id="error-message"></div>
 
             <div class="buttons-group">
-                <button type="button" class="btn btn-secondary" id="prev-btn" disabled>Previous</button>
-                <button type="button" class="btn btn-primary" id="next-btn">Next</button>
+                <button type="button" class="btn btn-secondary" id="prev-btn" disabled>
+                    <span class="material-icons">arrow_back</span>
+                    Previous
+                </button>
+                <button type="button" class="btn btn-primary" id="next-btn">
+                    Next
+                    <span class="material-icons">arrow_forward</span>
+                </button>
             </div>
 
             <input type="hidden" name="latitude" id="latitude">
             <input type="hidden" name="longitude" id="longitude">
         </form>
-    </div>
+    </main>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const nextBtn = document.getElementById('next-btn');
             const prevBtn = document.getElementById('prev-btn');
             const formSteps = [...document.querySelectorAll('.form-step')];
+            
+            // --- Updated to support new progress bar ---
             const progressSteps = [...document.querySelectorAll('.progress-step')];
+            const progressLines = [...document.querySelectorAll('.progress-line')];
+            
             const errorMessage = document.getElementById('error-message');
             let currentStep = 0;
-            // Get longitude input element for map setting
             const lonInput = document.getElementById('longitude'); 
 
             const subCategoryData = {
                 garbage: ['Bin overflowing', 'Illegal dumping', 'Uncollected trash'],
                 pothole: ['Small pothole', 'Large pothole', 'Multiple potholes'],
                 waterlogging: ['Clogged drain', 'Flooded street', 'Stagnant water'],
-                street_light: ['Light not working', 'Flickering light', 'Damaged pole']
+                electricity_issue: ['Loadshedding', 'Power Outage', 'Damaged Pole/Wire'],
+                stray_animal: ['Injured animal', 'Aggressive animal', 'Animal herd']
             };
             
-            // --- STABLE WIZARD NAVIGATION ---
+            // --- WIZARD NAVIGATION ---
             nextBtn.addEventListener('click', (e) => {
                 if (nextBtn.type === 'submit') {
-                    // Let the form submit normally on the last step
+                    // Let the form submit naturally
                     return;
                 }
-                
-                // Validate current step before proceeding
                 if (validateStep(currentStep)) {
                     if (currentStep < formSteps.length - 1) {
                         currentStep++;
@@ -181,24 +501,38 @@
                     updateFormSteps();
                 }
             });
+
             function updateFormSteps() {
-                errorMessage.textContent = ''; // Clear errors on step change
+                errorMessage.textContent = ''; 
+                
+                // Update form step visibility
                 formSteps.forEach((step, index) => step.classList.toggle('active', index === currentStep));
+                
+                // --- Updated progress bar logic ---
                 progressSteps.forEach((step, index) => step.classList.toggle('active', index <= currentStep));
+                progressLines.forEach((line, index) => line.classList.toggle('active', index < currentStep));
+                
+                // Update button states
                 prevBtn.disabled = currentStep === 0;
 
+                const nextBtnIcon = nextBtn.querySelector('.material-icons');
+                const nextBtnText = nextBtn.childNodes[0]; // Get the text node
+
                 if (currentStep === formSteps.length - 1) {
-                    nextBtn.textContent = 'Submit Report';
-                    nextBtn.type = 'submit'; // Change to submit button
+                    nextBtnText.textContent = 'Submit Report ';
+                    nextBtnIcon.textContent = 'check_circle';
+                    nextBtn.type = 'submit'; 
                 } else {
-                    nextBtn.textContent = 'Next';
-                    nextBtn.type = 'button'; // Ensure it's a regular button
+                    nextBtnText.textContent = 'Next ';
+                    nextBtnIcon.textContent = 'arrow_forward';
+                    nextBtn.type = 'button'; 
                 }
                 
+                // Invalidate map size when its step becomes active
                 if (formSteps[currentStep].contains(document.getElementById('map'))) {
                     if (!mapInitialized) initMap();
-                    // Fix map rendering glitch
-                    setTimeout(() => map.invalidateSize(), 10);
+                    // Needs a slight delay for the tab to be visible
+                    setTimeout(() => map.invalidateSize(), 100); 
                 }
             }
             
@@ -206,17 +540,22 @@
             const issueTypeSelect = document.getElementById('issue-type');
             const latInput = document.getElementById('latitude');
             const descriptionInput = document.getElementById('description');
+            const otherIssueInput = document.getElementById('other-issue-text'); 
 
             function validateStep(stepIndex) {
-                errorMessage.textContent = ''; // Clear previous errors
+                errorMessage.textContent = ''; 
                 if (stepIndex === 0) {
-                    if (issueTypeSelect.value === '') {
+                    const issueType = issueTypeSelect.value; 
+                    if (issueType === '') {
                         errorMessage.textContent = 'Please select an issue type to continue.';
+                        return false;
+                    }
+                    if (issueType === 'other' && otherIssueInput.value.trim() === '') {
+                        errorMessage.textContent = 'Please specify the issue in the text box.';
                         return false;
                     }
                 }
                 if (stepIndex === 1) {
-                    // Check if latitude and longitude hidden fields have been set
                     if (latInput.value === '' || lonInput.value === '') { 
                         errorMessage.textContent = 'Please set the issue location on the map.';
                         return false;
@@ -225,52 +564,73 @@
                 return true;
             }
 
-            // CRITICAL FIX: Updated finalValidation to check ALL required steps (1, 2, and 3)
+            // --- FINAL SUBMISSION VALIDATION ---
             window.finalValidation = function() {
-                errorMessage.textContent = ''; // Clear previous errors
-
-                // 1. Validate Step 1 (Issue Type)
+                errorMessage.textContent = ''; 
                 if (!validateStep(0)) {
-                    // Setting currentStep back to 0 visually guides the user
                     currentStep = 0; 
                     updateFormSteps();
-                    errorMessage.textContent = 'Please select an issue type (Step 1).';
                     return false; 
                 }
-                
-                // 2. Validate Step 2 (Location)
                 if (!validateStep(1)) {
                     currentStep = 1;
                     updateFormSteps();
                     errorMessage.textContent = 'Please set the issue location on the map (Step 2).';
                     return false; 
                 }
-
-                // 3. Validate Step 3 (Description)
                 if (descriptionInput.value.trim() === '') {
+                    currentStep = 2; 
+                    updateFormSteps(); 
                     errorMessage.textContent = 'Please add a description before submitting (Step 3).';
                     return false; 
                 }
                 
-                // All checks passed
-                return true; // Allow form submission to Django view
+                // Disable button on submit
+                nextBtn.disabled = true;
+                nextBtn.querySelector('.material-icons').textContent = 'hourglass_top';
+                nextBtn.childNodes[0].textContent = 'Submitting... ';
+                return true; 
             }
             
-            // --- INTERACTIVE MAP (with initialization fix) ---
+            // --- LEAFLET MAP ---
             let map, marker, mapInitialized = false;
+            // Default map coordinates to IIT Kharagpur
+            const KGP_COORDS = [22.3145, 87.3093]; 
+            
             function initMap() {
-                map = L.map('map').setView([22.3145, 87.3093], 13);
+                map = L.map('map').setView(KGP_COORDS, 13); 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                marker = L.marker([22.3145, 87.3093], { draggable: true }).addTo(map)
-                    .bindPopup('Drag me to the exact issue location!').openPopup();
                 
+                // --- MODIFIED ---
+                // Set draggable to false and update the popup text
+                marker = L.marker(KGP_COORDS, { draggable: true}).addTo(map) 
+                    .bindPopup('Click the map to set the issue location.').openPopup();
+                
+                // --- REMOVED ---
+                // The 'dragend' event is no longer needed
+                /*
                 marker.on('dragend', e => {
                     const latlng = e.target.getLatLng();
                     latInput.value = latlng.lat;
                     lonInput.value = latlng.lng;
+                    errorMessage.textContent = ''; // Clear location error
                 });
+                */
+
+                // --- NEW ---
+                // Add a 'click' listener to the map itself
+                map.on('click', e => {
+                    const latlng = e.latlng;
+                    marker.setLatLng(latlng);      // Move the marker to the clicked spot
+                    latInput.value = latlng.lat;   // Update hidden input
+                    lonInput.value = latlng.lng;   // Update hidden input
+                    errorMessage.textContent = ''; // Clear location error
+                    map.closePopup();              // Close the initial popup
+                });
+
                 mapInitialized = true;
             }
+            
             document.getElementById('get-location-btn').addEventListener('click', () => {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(pos => {
@@ -280,36 +640,74 @@
                         latInput.value = coords[0];
                         lonInput.value = coords[1];
                         map.closePopup();
+                        errorMessage.textContent = ''; // Clear location error
+                    }, (err) => {
+                        alert('Could not get your location. Please set it manually.');
+                    }, {
+                        // --- NEW ---
+                        // Add options to request high accuracy
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
                     });
                 }
             });
 
-            // --- Other features (Sub-categories, Image Previews) ---
+            // --- DYNAMIC FORM LOGIC ---
             const subCategoryGroup = document.getElementById('sub-category-group');
             const subCategorySelect = document.getElementById('sub-category');
+            const otherIssueGroup = document.getElementById('other-issue-group'); 
+
             issueTypeSelect.addEventListener('change', e => {
                 const type = e.target.value;
-                if (subCategoryData[type]) {
-                    subCategorySelect.innerHTML = subCategoryData[type]
-                        .map(sub => `<option value="${sub.toLowerCase().replace(' ', '_')}">${sub}</option>`).join('');
+                errorMessage.textContent = ''; // Clear validation error
+
+                if (type === 'other') {
+                    otherIssueGroup.classList.remove('hidden');
+                    otherIssueInput.required = true; 
+                    subCategoryGroup.classList.add('hidden'); 
+                } 
+                else if (subCategoryData[type]) { 
+                    subCategorySelect.innerHTML = `<option value="" disabled selected>-- Select a sub-category --</option>` +
+                        subCategoryData[type]
+                        .map(sub => `<option value="${sub.toLowerCase().replace(/ /g, '_')}">${sub}</option>`).join('');
                     subCategoryGroup.classList.remove('hidden');
-                } else {
+                    otherIssueGroup.classList.add('hidden'); 
+                    otherIssueInput.required = false; 
+                } 
+                else {
                     subCategoryGroup.classList.add('hidden');
+                    otherIssueGroup.classList.add('hidden');
+                    otherIssueInput.required = false;
                 }
             });
+
+            // --- IMAGE PREVIEWS ---
             const imageInput = document.getElementById('issue-images');
             const previewsContainer = document.getElementById('image-previews');
+            
             imageInput.addEventListener('change', () => {
-                previewsContainer.innerHTML = '';
-                const files = Array.from(imageInput.files).slice(0, 3);
-                files.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = e => {
-                        previewsContainer.innerHTML += `<img src="${e.target.result}" alt="preview">`;
-                    };
-                    reader.readAsDataURL(file);
-                });
+                previewsContainer.innerHTML = ''; // Clear old previews
+                const files = Array.from(imageInput.files).slice(0, 3); // Limit to 3
+                
+                if (files.length > 0) {
+                    files.forEach(file => {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = e => {
+                                const img = document.createElement('img');
+                                img.src = e.target.result;
+                                img.alt = 'Image preview';
+                                previewsContainer.appendChild(img);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
             });
+
+            // Initialize first step
+            updateFormSteps();
         });
     </script>
 </body>

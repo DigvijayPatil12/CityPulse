@@ -1,112 +1,299 @@
-{% load static %}
+ {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{{ user.first_name }}'s Profile - CityPulse</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
     <style>
         :root {
             --primary-color: #007bff;
-            --light-gray: #f4f7f6;
+            --primary-light: #e6f2ff;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
             --border-color: #dee2e6;
+            --shadow: 0 4px 12px rgba(0,0,0,0.06);
+            --border-radius: 12px;
         }
+
+        /* Base & Reset */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: var(--light-gray);
+            background-color: var(--background-color);
+            color: var(--text-primary);
             margin: 0;
+            padding-top: 60px; /* Space for the fixed header */
         }
-        /* Header from home.html for consistency */
+
+        /* Consistent Header (Mobile First) */
         .app-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 25px; height: 65px; background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .brand-title { font-size: 1.6rem; font-weight: 600; color: #333; }
-        .back-link { text-decoration: none; color: var(--primary-color); font-weight: 500; }
-
-        /* Profile Page Layout */
-        .profile-container {
             display: flex;
-            gap: 30px;
-            padding: 30px;
-            max-width: 1200px;
-            margin: 30px auto;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px; /* Mobile padding */
+            height: 60px;
+            background-color: var(--card-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
         }
-        .profile-sidebar { flex: 0 0 300px; }
-        .profile-main { flex-grow: 1; }
+        .brand-title {
+            font-size: 1.25rem; /* Mobile-friendly size */
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .back-link .desktop-text {
+            display: none; /* Hide text on mobile */
+        }
 
-        /* Profile Card (Left) */
+        /* Profile Layout (Mobile First) */
+        .profile-container {
+            /* On mobile, it's just a simple vertical flow */
+            display: block;
+            padding: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* The sidebar and main content are just blocks on mobile */
+        .profile-sidebar {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .profile-main {
+            width: 100%;
+        }
+
+        /* Profile Card (Mobile) */
         .profile-card {
-            background: #fff;
-            padding: 30px;
-            border-radius: 12px;
+            background: var(--card-background);
+            padding: 25px;
+            border-radius: var(--border-radius);
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow);
         }
         .avatar {
-            width: 120px; height: 120px;
+            width: 90px; /* Smaller avatar for mobile */
+            height: 90px;
             border-radius: 50%;
-            background-color: var(--primary-color);
-            color: white;
+            background: var(--primary-light);
+            color: var(--primary-color);
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 15px;
         }
-        .avatar .material-icons { font-size: 4rem; }
-        .profile-card h2 { margin: 0; font-size: 1.5rem; }
-        .profile-card p { color: #6c757d; margin: 5px 0 15px; }
-        .profile-card .join-date { font-size: 0.9em; color: #6c757d; }
+        .avatar .material-icons {
+            font-size: 3rem; /* Smaller icon */
+        }
+        .profile-card h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+        .profile-card p {
+            color: var(--text-secondary);
+            margin: 4px 0 15px;
+            font-size: 1rem;
+        }
+        .divider {
+            border: 0;
+            height: 1px;
+            background: var(--border-color);
+            margin: 20px 0;
+        }
+        .profile-card .join-date {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
         
-        /* Stats & Activity (Right) */
+        /* Stats Grid (Mobile First) */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+            /* This auto-fits 2 columns on most phones */
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
         .stat-card {
-            background: #fff; padding: 20px; border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
         }
-        .stat-card h3 { font-size: 1rem; color: #6c757d; margin: 0 0 5px; }
-        .stat-card .value { font-size: 2.5rem; font-weight: 600; color: var(--primary-color); }
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .stat-header h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin: 0;
+        }
+        .stat-header .material-icons {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+        .stat-card .value {
+            font-size: 2.25rem; /* Slightly smaller for mobile */
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
 
+        /* Activity Section (Mobile) */
         .activity-section {
-            background: #fff; padding: 20px; border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        .activity-section h2 {
+            font-size: 1.25rem;
+            margin: 0 0 15px;
         }
         .activity-list .activity-item {
-            display: flex; align-items: center; padding: 15px 0;
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
             border-bottom: 1px solid var(--border-color);
         }
-        .activity-list .activity-item:last-child { border-bottom: none; }
-        .activity-icon {
-            width: 40px; height: 40px; background: var(--light-gray);
-            border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; margin-right: 15px; color: #333;
+        .activity-list .activity-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
         }
-        .activity-details { flex-grow: 1; }
-        .activity-details p { margin: 0; }
-        .activity-details .date { font-size: 0.8em; color: #6c757d; }
+        .activity-list .activity-item:first-child {
+            padding-top: 0;
+        }
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--background-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: var(--text-primary);
+        }
+        .activity-details {
+            flex-grow: 1;
+        }
+        .activity-details p {
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        .activity-details .date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
         .status {
-            padding: 4px 10px; font-size: 0.8rem; font-weight: 600;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
             border-radius: 12px;
+            flex-shrink: 0; /* Prevents status from wrapping */
+            margin-left: 10px;
         }
         .status.pending { background-color: #fff0c2; color: #856404; }
         .status.resolved { background-color: #d4edda; color: #155724; }
+
+        /* ----------------------------------- */
+        /* DESKTOP OVERRIDES (Tablet & up)   */
+        /* ----------------------------------- */
+        @media (min-width: 768px) {
+            body {
+                padding-top: 65px; /* Reset for desktop header */
+            }
+            .app-header {
+                padding: 0 25px; /* Desktop padding */
+                height: 65px;
+            }
+            .brand-title {
+                font-size: 1.6rem; /* Desktop size */
+            }
+            .back-link .desktop-text {
+                display: inline; /* Show text on desktop */
+            }
+            
+            /* Re-introduce the flex sidebar layout */
+            .profile-container {
+                display: flex;
+                gap: 30px;
+                padding: 30px;
+                margin: 30px auto;
+            }
+            .profile-sidebar {
+                flex: 0 0 300px; /* Fixed sidebar width */
+                margin-bottom: 0;
+            }
+            .profile-main {
+                flex-grow: 1;
+            }
+
+            /* Upscale cards for desktop */
+            .profile-card {
+                padding: 30px;
+            }
+            .avatar {
+                width: 120px;
+                height: 120px;
+            }
+            .avatar .material-icons {
+                font-size: 4rem;
+            }
+            
+            /* Force 3-column grid on desktop */
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                margin-bottom: 30px;
+            }
+            .stat-card .value {
+                font-size: 2.5rem; /* Restore desktop size */
+            }
+            
+            .activity-section {
+                padding: 25px;
+            }
+        }
+
     </style>
 </head>
 <body>
 
     <header class="app-header">
-        <h1 class="brand-title">User Profile</h1>
-        <a href="{% url 'home' %}" class="back-link">← Back to Dashboard</a>
+        <h1 class="brand-title">{{ user.first_name }}'s Profile</h1>
+        <a href="{% url 'home' %}" class="back-link">
+            <span class="material-icons">arrow_back</span>
+            <span class="desktop-text">Back to Dashboard</span>
+        </a>
     </header>
 
     <div class="profile-container">
@@ -115,23 +302,32 @@
                 <div class="avatar"><span class="material-icons">person</span></div>
                 <h2>{{ user.first_name }} {{ user.last_name }}</h2>
                 <p>@{{ user.username }}</p>
-                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
-                <p class="join-date">Joined on {{ user.date_joined|date:"F j, Y" }}</p>
+                <div class="divider"></div>
+                <p class="join-date">Joined {{ user.date_joined|date:"F j, Y" }}</p>
             </div>
         </aside>
 
         <main class="profile-main">
             <section class="stats-grid">
                 <div class="stat-card">
-                    <h3>Total Reports</h3>
+                    <div class="stat-header">
+                        <span class="material-icons">assessment</span>
+                        <h3>Total Reports</h3>
+                    </div>
                     <p class="value">12</p> 
                 </div>
                 <div class="stat-card">
-                    <h3>Issues Resolved</h3>
+                    <div class="stat-header">
+                        <span class="material-icons">check_circle</span>
+                        <h3>Issues Resolved</h3>
+                    </div>
                     <p class="value">5</p>
                 </div>
                 <div class="stat-card">
-                    <h3>Reputation</h3>
+                    <div class="stat-header">
+                        <span class="material-icons">star</span>
+                        <h3>Reputation</h3>
+                    </div>
                     <p class="value">128</p>
                 </div>
             </section>
@@ -140,8 +336,7 @@
                 <h2>Recent Activity</h2>
                 <div class="activity-list">
                     <div class="activity-item">
-                        <div class="activity-icon"><span class="material-icons">report</span></div>
-                        <div class="activity-details">
+                        <div class="activity-icon"><span class="material-icons">report_problem</span></div> <div class="activity-details">
                             <p>Reported a <strong>Pothole</strong> issue.</p>
                             <p class="date">October 15, 2025</p>
                         </div>
