@@ -11,7 +11,9 @@ from django.contrib import messages
 from .forms import CustomUserCreationForm 
 
 # === NEW IMPORTS FOR DATABASE HANDLING ===
-from .models import IssueReport, IssueImage # Assuming you defined these models in core/models.py
+from .models import IssueReport, IssueImage
+from django.http import JsonResponse # For our new API view
+from decimal import Decimal, InvalidOperation # To correctly handle DecimalFields
 # =======================================
 
 # ----------------------------------------------------------------------
@@ -75,13 +77,13 @@ def report_issue_view(request):
 
         try:
             # 2. Save the main IssueReport object
+            #    UPDATED: Use Decimal() for coordinates
             new_issue = IssueReport.objects.create(
-                # Automatically links to the logged-in user due to @login_required
                 reporter=request.user, 
                 issue_type=issue_type,
                 sub_category=request.POST.get('sub_category'), # Optional
-                latitude=float(latitude),
-                longitude=float(longitude),
+                latitude=Decimal(latitude.strip()),
+                longitude=Decimal(longitude.strip()),
                 description=description,
             )
             
@@ -95,7 +97,7 @@ def report_issue_view(request):
             messages.success(request, 'Your issue has been successfully reported!')
             return redirect('home') # Redirect to home or a success page
 
-        except ValueError:
+        except (ValueError, InvalidOperation):
             # Handle cases where latitude/longitude conversion fails
             messages.error(request, 'Invalid location coordinates submitted.')
         except Exception as e:
@@ -136,7 +138,9 @@ def user_profile(request):
     
     return render(request, 'core/profile.html', context)
 
-# Helper function to check if a user is staff
+# ----------------------------------------------------------------------
+# 7. ADMIN/STAFF VIEWS
+# ----------------------------------------------------------------------
 def is_staff_user(user):
     return user.is_staff
 
@@ -146,10 +150,44 @@ def all_issues_list(request):
     """
     Retrieves all reported issues for display on a staff-only dashboard.
     """
-    # Fetch all issues, ordered by the most recently reported
     issues = IssueReport.objects.select_related('reporter').order_by('-reported_at')
     
     context = {
         'issues': issues
     }
     return render(request, 'core/issue_list.html', context)
+
+
+# ----------------------------------------------------------------------
+# 8. --- NEW API VIEW FOR HEATMAP ---
+# ----------------------------------------------------------------------
+def issue_data_api(request):
+    """
+    This is the API endpoint that provides heatmap data to Leaflet.
+    It's filterable by issue_type.
+    """
+    try:
+        # Get the list of selected issue types from the query parameters
+        # e.g., /api/issue-data/?types[]=pothole&types[]=crime
+        selected_types = request.GET.getlist('types[]')
+
+        issues = IssueReport.objects.all()
+
+        # If any types are selected, filter the queryset
+        if selected_types:
+            issues = issues.filter(issue_type__in=selected_types)
+
+        # Format the data into the [lat, lng, intensity]
+        # list that Leaflet.heat expects.
+        # Note: We must cast Decimals to float for JSON serialization
+        data_points = [
+            [float(issue.latitude), float(issue.longitude), float(issue.intensity)]
+            for issue in issues
+        ]
+        
+        # Return the data as a JSON response
+        return JsonResponse(data_points, safe=False)
+        
+    except Exception as e:
+        # Return an error message if something goes wrong
+        return JsonResponse({'error': str(e)}, status=500)

@@ -1,12 +1,13 @@
+# core/models.py
 from django.db import models
-
-from django.contrib.auth import get_user_model # Use this if issues are linked to a logged-in user
+from django.contrib.auth import get_user_model
+from decimal import Decimal
 
 User = get_user_model()
 
 # Model for the reported issue
 class IssueReport(models.Model):
-    # Link to the user who reported the issue (optional: depends on your app logic)
+    # Link to the user who reported the issue
     reporter = models.ForeignKey(
         User, 
         on_delete=models.SET_NULL, # Keeps the report if user is deleted
@@ -20,10 +21,15 @@ class IssueReport(models.Model):
         ('pothole', 'Pothole'),
         ('waterlogging', 'Waterlogging'),
         ('street_light', 'Broken Streetlight'),
+        # You can add the other categories here from your filter
+        ('accident', 'Road Accident Zone'),
+        ('crime', 'Crime Hotspot'),
+        ('other', 'Other'),
     ]
     issue_type = models.CharField(
         max_length=50, 
         choices=ISSUE_CHOICES,
+        default='other',
         verbose_name="Type of Issue"
     )
     sub_category = models.CharField(
@@ -45,6 +51,16 @@ class IssueReport(models.Model):
 
     # Fields from the Details step (Step 3)
     description = models.TextField()
+
+    # --- NEW FIELD FOR HEATMAP ---
+    # This field will store the "weight" of the point for the heatmap.
+    # We can set it to a default, or later use ML to change it.
+    intensity = models.DecimalField(
+        max_digits=3, 
+        decimal_places=2, 
+        default=Decimal('0.5')
+    )
+    # -----------------------------
     
     # Tracking information
     reported_at = models.DateTimeField(auto_now_add=True)
@@ -59,7 +75,7 @@ class IssueReport(models.Model):
     )
 
     def __str__(self):
-        return f'{self.issue_type} reported at ({self.latitude}, {self.longitude})'
+        return f'{self.get_issue_type_display()} reported at ({self.latitude}, {self.longitude})'
 
 # Model for images (since you allow multiple images per issue)
 class IssueImage(models.Model):
@@ -72,4 +88,3 @@ class IssueImage(models.Model):
     
     def __str__(self):
         return f"Image for Issue {self.issue.id}"
-# Create your models here.

@@ -32,6 +32,8 @@ urlpatterns = [
     # 8. NEW: ALL ISSUES LIST PAGE (Staff Only Access)
     path('issues/', views.all_issues_list, name='all_issues'),
 
+    path('api/issue-data/', views.issue_data_api, name='issue_data_api'),
+
 
 
 ]

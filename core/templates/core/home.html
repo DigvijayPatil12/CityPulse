@@ -267,7 +267,7 @@
         <!-- <h1 class="brand-title">CityPulse</h1> -->
         <h1 class="brand-title">
             <span class="material-icons">signal_cellular_alt</span>
-            CityPulse
+            SexyUtkarshPulse
         </h1>
         <nav class="nav-actions">
             <a href="{% url 'report_issue' %}" class="btn btn-primary">Report Issue</a>
@@ -307,7 +307,7 @@
             dropdownMenu.style.display = 'none';
         });
 
-        // --- Your existing Leaflet map code remains unchanged here ---
+        // --- Map Tile Layers ---
         var streetMap = L.tileLayer(
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             { attribution: '&copy; OpenStreetMap' }
@@ -324,35 +324,16 @@
         );
 
         // --- Initialize Map ---
+        // Note: I fixed your zoom level. 100 is too high, 15 is good for a campus.
         var map = L.map('map', {
             center: [22.3145, 87.3093],
-            zoom: 100,
+            zoom: 15, 
             layers: [streetMap] // Default base layer
         });
 
-        // --- Heatmap Data ---
-        var heat_data = [
-            [22.3196, 87.3123, 0.9],
-            [22.3180, 87.3099, 0.7],
-            [22.3211, 87.3050, 0.8],
-            [22.3150, 87.3025, 0.5],
-            [22.3100, 87.3110, 0.4],
-            [22.3235, 87.3145, 0.6],
-            [22.3080, 87.3000, 0.3],
-            [22.3175, 87.3070, 0.7],
-            [22.3208, 87.3102, 0.8],
-            [22.3162, 87.3138, 0.6],
-            [22.3125, 87.3085, 0.5],
-            [22.3115, 87.3060, 0.4],
-            [22.3192, 87.3155, 0.8],
-            [22.3225, 87.3080, 0.9],
-            [22.3188, 87.3045, 0.7],
-            [22.3132, 87.3040, 0.5],
-            [22.3095, 87.3095, 0.4]
-        ];
-
         // --- Create Heat Layer ---
-        var heat = L.heatLayer(heat_data, {
+        // Initialize the heat layer with an EMPTY array.
+        var heat = L.heatLayer([], {
             radius: 28,
             blur: 10,
             maxZoom: 17,
@@ -366,6 +347,26 @@
                 1.0: 'red'
             }
         }).addTo(map);
+
+        // --- FETCH DATA FROM DJANGO API ---
+        // This runs when the page has finished loading
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch data from the URL we created in urls.py
+            fetch("{% url 'issue_data_api' %}")
+                .then(response => response.json())
+                .then(dataPoints => {
+                    // 'dataPoints' is now the list from our database
+                    // e.g., [[22.319, 87.312, 0.9], ...]
+                    
+                    // Set the heatmap's data to these new points
+                    heat.setLatLngs(dataPoints);
+                    
+                    console.log("Heatmap data loaded from database.");
+                })
+                .catch(error => {
+                    console.error('Error fetching heatmap data:', error);
+                });
+        });
 
         // --- Adjust Heat Radius Dynamically on Zoom ---
         map.on('zoomend', function () {
