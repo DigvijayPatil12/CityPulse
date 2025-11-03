@@ -387,7 +387,7 @@
             </div>
         </div>
 
-        <form id="reportForm" method="post" action="{% url 'report_issue' %}" enctype="multipart-form-data" onsubmit="return finalValidation()">
+        <form id="reportForm" method="post" action="{% url 'report_issue' %}" enctype="multipart/form-data" onsubmit="return finalValidation()">
             {% csrf_token %}
             
             <div class="form-step active">
@@ -465,6 +465,7 @@
             const nextBtn = document.getElementById('next-btn');
             const prevBtn = document.getElementById('prev-btn');
             const formSteps = [...document.querySelectorAll('.form-step')];
+            const reportForm = document.getElementById('reportForm');
             
             // --- Updated to support new progress bar ---
             const progressSteps = [...document.querySelectorAll('.progress-step')];
@@ -484,10 +485,12 @@
             
             // --- WIZARD NAVIGATION ---
             nextBtn.addEventListener('click', (e) => {
+                // If the button is configured as 'submit' (last step), handle AJAX submission instead
                 if (nextBtn.type === 'submit') {
-                    // Let the form submit naturally
+                    handleAjaxSubmission();
                     return;
                 }
+                
                 if (validateStep(currentStep)) {
                     if (currentStep < formSteps.length - 1) {
                         currentStep++;
@@ -495,12 +498,31 @@
                     }
                 }
             });
+
             prevBtn.addEventListener('click', () => {
                 if (currentStep > 0) {
                     currentStep--;
                     updateFormSteps();
                 }
             });
+            
+            // Prevent native form submission when hitting Enter on any field
+            reportForm.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (currentStep < formSteps.length - 1) {
+                         // Automatically proceed to the next step if possible
+                        if (validateStep(currentStep)) {
+                            currentStep++;
+                            updateFormSteps();
+                        }
+                    } else if (nextBtn.type === 'submit') {
+                        // If on the last step, submit the form via AJAX
+                        handleAjaxSubmission();
+                    }
+                }
+            });
+
 
             function updateFormSteps() {
                 errorMessage.textContent = ''; 
@@ -550,6 +572,13 @@
                         errorMessage.textContent = 'Please select an issue type to continue.';
                         return false;
                     }
+                    // Validate sub-category only if it's visible and not 'other'
+                    if (issueType !== 'other' && subCategoryGroup.classList.contains('hidden') === false) {
+                        if (subCategorySelect.value === '') {
+                            errorMessage.textContent = 'Please select a sub-category.';
+                            return false;
+                        }
+                    }
                     if (issueType === 'other' && otherIssueInput.value.trim() === '') {
                         errorMessage.textContent = 'Please specify the issue in the text box.';
                         return false;
@@ -564,9 +593,11 @@
                 return true;
             }
 
-            // --- FINAL SUBMISSION VALIDATION ---
+            // --- FINAL SUBMISSION VALIDATION (Called by onsubmit or manual click) ---
             window.finalValidation = function() {
                 errorMessage.textContent = ''; 
+                
+                // Re-validate all steps backwards to ensure data integrity before sending
                 if (!validateStep(0)) {
                     currentStep = 0; 
                     updateFormSteps();
@@ -585,13 +616,65 @@
                     return false; 
                 }
                 
-                // Disable button on submit
+                // If validation passes, handle submission via AJAX (CRITICAL)
+                handleAjaxSubmission(); 
+                
+                // Prevent default native form submission regardless of AJAX success/failure initially
+                return false; 
+            }
+
+            // --- NEW: AJAX SUBMISSION HANDLER ---
+            function handleAjaxSubmission() {
+                // 1. Create FormData object from the HTML form (handles files correctly)
+                const formData = new FormData(reportForm);
+
+                // 2. Disable button and show loading state
                 nextBtn.disabled = true;
                 nextBtn.querySelector('.material-icons').textContent = 'hourglass_top';
                 nextBtn.childNodes[0].textContent = 'Submitting... ';
-                return true; 
+                
+                // 3. Perform the fetch request
+                fetch(reportForm.action, {
+                    method: 'POST',
+                    // IMPORTANT: Do NOT set Content-Type header manually for file uploads
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    }
+                })
+                .then(response => {
+                    // Check if the response was a redirect (Django returns 302 on success/redirect)
+                    if (response.redirected) {
+                        window.location.href = response.url; // Follow the redirect (home or success)
+                        return;
+                    }
+                    // If not a redirect, read the response text (likely the rendered form with errors)
+                    return response.text(); 
+                })
+                .then(html => {
+                    if (html) {
+                        // If Django returned the rendered form with errors, replace the page content
+                        document.documentElement.innerHTML = html;
+                    }
+                    // If successful (and not redirected), this block shouldn't be reached, 
+                    // but we ensure buttons are reset just in case of non-redirect success.
+                    nextBtn.disabled = false;
+                    nextBtn.querySelector('.material-icons').textContent = 'check_circle';
+                    nextBtn.childNodes[0].textContent = 'Submit Report ';
+                })
+                .catch(error => {
+                    // Log catastrophic errors (network failure, etc.)
+                    console.error('Submission failed:', error);
+                    errorMessage.textContent = 'Network error during submission. Please check your connection.';
+                    
+                    // Reset button state
+                    nextBtn.disabled = false;
+                    nextBtn.querySelector('.material-icons').textContent = 'check_circle';
+                    nextBtn.childNodes[0].textContent = 'Submit Report ';
+                });
             }
-            
+
+
             // --- LEAFLET MAP ---
             let map, marker, mapInitialized = false;
             // Default map coordinates to IIT Kharagpur
@@ -601,23 +684,9 @@
                 map = L.map('map').setView(KGP_COORDS, 13); 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
                 
-                // --- MODIFIED ---
-                // Set draggable to false and update the popup text
                 marker = L.marker(KGP_COORDS, { draggable: true}).addTo(map) 
                     .bindPopup('Click the map to set the issue location.').openPopup();
                 
-                // --- REMOVED ---
-                // The 'dragend' event is no longer needed
-                /*
-                marker.on('dragend', e => {
-                    const latlng = e.target.getLatLng();
-                    latInput.value = latlng.lat;
-                    lonInput.value = latlng.lng;
-                    errorMessage.textContent = ''; // Clear location error
-                });
-                */
-
-                // --- NEW ---
                 // Add a 'click' listener to the map itself
                 map.on('click', e => {
                     const latlng = e.latlng;
@@ -644,8 +713,6 @@
                     }, (err) => {
                         alert('Could not get your location. Please set it manually.');
                     }, {
-                        // --- NEW ---
-                        // Add options to request high accuracy
                         enableHighAccuracy: true,
                         timeout: 10000,
                         maximumAge: 0
@@ -657,6 +724,7 @@
             const subCategoryGroup = document.getElementById('sub-category-group');
             const subCategorySelect = document.getElementById('sub-category');
             const otherIssueGroup = document.getElementById('other-issue-group'); 
+            const issueImagesInput = document.getElementById('issue-images');
 
             issueTypeSelect.addEventListener('change', e => {
                 const type = e.target.value;
@@ -665,30 +733,38 @@
                 if (type === 'other') {
                     otherIssueGroup.classList.remove('hidden');
                     otherIssueInput.required = true; 
+                    otherIssueInput.setAttribute('name', 'sub_category'); // Use this field for sub_category value
+                    
                     subCategoryGroup.classList.add('hidden'); 
+                    subCategorySelect.removeAttribute('name'); // Remove name from unused select
                 } 
                 else if (subCategoryData[type]) { 
                     subCategorySelect.innerHTML = `<option value="" disabled selected>-- Select a sub-category --</option>` +
                         subCategoryData[type]
                         .map(sub => `<option value="${sub.toLowerCase().replace(/ /g, '_')}">${sub}</option>`).join('');
+                    
                     subCategoryGroup.classList.remove('hidden');
+                    subCategorySelect.setAttribute('name', 'sub_category'); // Ensure name is present
+                    
                     otherIssueGroup.classList.add('hidden'); 
+                    otherIssueInput.removeAttribute('name'); // Remove name from unused input
                     otherIssueInput.required = false; 
                 } 
                 else {
                     subCategoryGroup.classList.add('hidden');
+                    subCategorySelect.removeAttribute('name');
                     otherIssueGroup.classList.add('hidden');
+                    otherIssueInput.removeAttribute('name');
                     otherIssueInput.required = false;
                 }
             });
 
             // --- IMAGE PREVIEWS ---
-            const imageInput = document.getElementById('issue-images');
             const previewsContainer = document.getElementById('image-previews');
             
-            imageInput.addEventListener('change', () => {
+            issueImagesInput.addEventListener('change', () => {
                 previewsContainer.innerHTML = ''; // Clear old previews
-                const files = Array.from(imageInput.files).slice(0, 3); // Limit to 3
+                const files = Array.from(issueImagesInput.files).slice(0, 3); // Limit to 3
                 
                 if (files.length > 0) {
                     files.forEach(file => {
