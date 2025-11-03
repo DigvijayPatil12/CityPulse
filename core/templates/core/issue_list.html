@@ -29,6 +29,7 @@
                     <th>Date</th>
                     <th>Description</th>
                     <th>Images</th>
+                    <th>Intensity</th> 
                 </tr>
             </thead>
             <tbody>
@@ -37,7 +38,7 @@
                     <td>{{ issue.id }}</td>
                     <td>{{ issue.get_issue_type_display }}</td>
                     <td>
-                        <a href="https://www.google.com/maps/search/?api=1&query={{ issue.latitude }},{{ issue.longitude }}" target="_blank" title="View on map">
+                        <a href="https://maps.google.com/?q={{ issue.latitude }},{{ issue.longitude }}" target="_blank" title="View on map">
                             ({{ issue.latitude }}, {{ issue.longitude }})
                         </a>
                     </td>
@@ -58,6 +59,7 @@
                             No Images
                         {% endfor %}
                     </td>
+                    <td>{{ issue.intensity }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

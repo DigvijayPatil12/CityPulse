@@ -1,0 +1,102 @@
+{% extends 'core/base_app.html' %}
+
+{% block title %}{{ issue.get_issue_type_display }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title">{{ issue.get_issue_type_display }}</h2>
+                    
+                    {% if issue.status == 'Reported' %}
+                        <span class="badge bg-warning text-dark">{{ issue.status }}</span>
+                    {% elif issue.status == 'In Progress' %}
+                        <span class="badge bg-info text-dark">{{ issue.status }}</span>
+                    {% elif issue.status == 'Resolved' %}
+                        <span class="badge bg-success">{{ issue.status }}</span>
+                    {% endif %}
+
+                    <p class="card-text mt-3">{{ issue.description }}</p>
+
+                    {% if issue.images.all %}
+                        <h5 class="mt-4">Attached Photos</h5>
+                        <div class="row mb-2">
+                            {% for img in issue.images.all %}
+                            <div class="col-md-4 col-6 mb-2">
+                                <a href="{{ img.image.url }}" target="_blank">
+                                    <img src="{{ img.image.url }}" class="img-fluid rounded border" alt="Issue image">
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                Reported by 
+                                <strong>
+                                    {% if issue.reporter %}
+                                        {{ issue.reporter.first_name }} {{ issue.reporter.last_name }}
+                                    {% else %}
+                                        An anonymous user
+                                    {% endif %}
+                                </strong>
+                                - {{ issue.reported_at|timesince }} ago
+                            </small>
+                        </div>
+                        
+                        <form action="{% url 'upvote_issue' issue.id %}" method="POST" class="mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                &#x25B2; Upvote ({{ issue.upvote_count }})
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h4 class="mb-3">Add a Comment</h4>
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ comment_form.body }}
+                        <button type="submit" class="btn btn-primary mt-2">Submit Comment</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="mb-4">Community Updates ({{ comments.count }})</h4>
+
+                    {% for comment in comments %}
+                    <div class="d-flex mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                {{ comment.author.first_name.0|default:'A' }}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <strong>{{ comment.author.first_name|default:'Anonymous' }} {{ comment.author.last_name }}</strong>
+                            <small class="text-muted"> - {{ comment.created_at|timesince }} ago</small>
+                            <p class="mt-1 mb-0">{{ comment.body }}</p>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                    {% empty %}
+                    <p class="text-muted">No comments or updates yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

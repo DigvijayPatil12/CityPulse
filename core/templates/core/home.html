@@ -1,7 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>CityPulse Heatmap</title>
@@ -23,11 +22,7 @@
         --header-height: 65px;
     }
 
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
         font-family: 'Poppins', sans-serif;
@@ -38,7 +33,7 @@
         overflow: hidden;
     }
 
-    /* Header & Navigation */
+    /* --- Header & Navigation --- */
     .app-header {
         display: flex;
         justify-content: space-between;
@@ -51,14 +46,20 @@
         position: relative;
         z-index: 1000;
     }
-
-    .nav-actions {
+    .brand-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 8px;
+        background: linear-gradient(45deg, #007bff, #00c6ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
-
-    /* Button Styling */
+    .brand-title .material-icons { font-size: 2rem; }
+    .nav-actions { display: flex; align-items: center; gap: 15px; }
     .btn {
         display: inline-flex;
         align-items: center;
@@ -72,23 +73,11 @@
         cursor: pointer;
         transition: background-color 0.2s ease, transform 0.1s ease;
     }
-
-    .btn-primary {
-        background-color: var(--primary-color);
-        color: white;
-    }
-
-    .btn:hover {
-        transform: translateY(-2px);
-    }
-
-    /* User Dropdown Menu */
-    .user-menu {
-        position: relative;
-    }
-
+    .btn-primary { background-color: var(--primary-color); color: white; }
+    .btn:hover { transform: translateY(-2px); }
+    .user-menu { position: relative; }
     #user-menu-button {
-        background: #c1c2c5;
+        background: #e1e3e8; /* Lighter background */
         border: none;
         border-radius: 50%;
         width: 42px;
@@ -99,11 +88,7 @@
         justify-content: center;
         transition: background-color 0.2s;
     }
-
-    #user-menu-button:hover {
-        background-color: #f0f0f0;
-    }
-
+    #user-menu-button:hover { background-color: #d1d3d8; }
     .dropdown-content {
         display: none;
         position: absolute;
@@ -115,7 +100,6 @@
         border-radius: 8px;
         overflow: hidden;
     }
-
     .dropdown-content a,
     .dropdown-content button {
         color: black;
@@ -130,61 +114,16 @@
         font-size: 0.9rem;
         cursor: pointer;
     }
-
     .dropdown-content a:hover,
-    .dropdown-content button:hover {
-        background-color: #f1f1f1;
-    }
-
-    .dropdown-content form {
-        margin: 0;
-    }
-
-    .dropdown-content .logout-btn {
-        color: #e3342f;
-        font-weight: 600;
-    }
-
-    /* Map Container & Map */
-    #map-container {
-        flex-grow: 1;
-        position: relative;
-        /* Crucial for positioning the FAB */
-    }
-
-    #map {
-        width: 100%;
-        height: 100%;
-        border-radius: 12px;
-    }
-
-    /* This is the main (desktop) style for the brand title */
-    .brand-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        /* Bolder font */
-        letter-spacing: -0.5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        /* Gradient Text Effect */
-        background: linear-gradient(45deg, #007bff, #00c6ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        /* text-fill-color: transparent; */
-    }
-
-    .brand-title .material-icons {
-        font-size: 2rem;
-        /* Match icon size to text */
-        margin-top: -2px;
-    }
-
-    /* Floating Action Button (FAB) Styling */
+    .dropdown-content button:hover { background-color: #f1f1f1; }
+    .dropdown-content form { margin: 0; }
+    .dropdown-content .logout-btn { color: #e3342f; font-weight: 600; }
+    
+    /* --- Map & FAB --- */
+    #map-container { flex-grow: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
     .fab {
         display: none;
-        /* Hidden by default on desktop */
         position: absolute;
         bottom: 25px;
         right: 20px;
@@ -199,61 +138,178 @@
         justify-content: center;
         z-index: 999;
         text-decoration: none;
-        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    .fab .material-icons { font-size: 28px; }
+
+    /*
+    =========================================
+    NEW STYLES: Filter Controls
+    =========================================
+    */
+    .filter-container {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 800; /* Below header, above map */
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+    .filter-container h4 {
+        margin: 0 0 10px 0;
+        font-size: 1rem;
+        font-weight: 600;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .filter-option {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        gap: 8px;
+    }
+    .filter-option input {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+    .filter-option label {
+        cursor: pointer;
+        user-select: none; /* Prevents text selection on click */
     }
 
-    .fab:hover {
-        background-color: var(--primary-hover);
-        transform: scale(1.05);
+    /*
+    =========================================
+    NEW STYLES: Recent Complaints Modal
+    =========================================
+    */
+    .modal-overlay {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Dimmed background */
+        z-index: 1999; /* Below modal, above everything else */
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-content {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+        width: 90%;
+        max-width: 600px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .modal-header h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .modal-close-btn {
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        cursor: pointer;
+        color: #888;
+        padding: 0;
+        line-height: 1;
+    }
+    .modal-close-btn:hover { color: #333; }
+
+    .modal-body {
+        overflow-y: auto; /* Makes body scrollable */
+        padding: 8px 20px 20px 20px;
+    }
+    .complaint-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .complaint-item {
+        padding: 16px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .complaint-item:last-child { border-bottom: none; }
+    
+    .complaint-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .complaint-type {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--primary-color);
+    }
+    .complaint-user {
+        font-size: 0.85rem;
+        color: #555;
+    }
+    .complaint-desc {
+        font-size: 0.95rem;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    .complaint-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #777;
+    }
+    .complaint-footer a {
+        font-weight: 600;
+        text-decoration: none;
+        color: var(--primary-hover);
+    }
+    .modal-loader {
+        text-align: center;
+        padding: 40px;
+        font-size: 1rem;
+        color: #555;
     }
 
-    .fab .material-icons {
-        font-size: 28px;
-    }
 
-    /* Responsive Design: All mobile/tablet overrides go here at the end */
+    /* --- Responsive --- */
     @media (max-width: 768px) {
-
-        /* Hide the header button on small screens */
-        .app-header .btn-primary {
-            display: none;
+        .app-header .btn-primary { display: none; }
+        .fab { display: flex; }
+        .app-header { padding: 0 12px; height: 50px; }
+        .brand-title { font-size: 1.4rem; gap: 5px; }
+        .brand-title .material-icons { font-size: 1.6rem; }
+        #user-menu-button { width: 38px; height: 38px; }
+        /* Make filter container smaller on mobile */
+        .filter-container {
+            font-size: 0.8rem;
+            padding: 8px;
+            top: 60px; /* Below header */
         }
-
-        /* Show the FAB on small screens */
-        .fab {
-            display: flex;
-        }
-
-        /* Reduce header padding on mobile */
-        .app-header {
-            padding: 0 12px;
-            height: 50px;
-
-        }
-
-        /* Reduce title font size on mobile */
-        .brand-title {
-            font-size: 1.4rem;
-            gap: 5px;
-        }
-
-        /* Reduce icon size on mobile */
-        .brand-title .material-icons {
-            font-size: 1.6rem;
-        }
-        
-        /* Optional: Shrink the user menu button if needed */
-        #user-menu-button {
-            width: 38px;
-            height: 38px;
-        }
+        .filter-container h4 { font-size: 0.9rem; margin-bottom: 6px; }
     }
 </style>
 </head>
 
 <body>
     <header class="app-header">
-        <!-- <h1 class="brand-title">CityPulse</h1> -->
         <h1 class="brand-title">
             <span class="material-icons">signal_cellular_alt</span>
             CityPulse
@@ -267,12 +323,13 @@
                 </button>
                 <div id="dropdown-menu" class="dropdown-content">
                     <a href="{% url 'profile' %}">View Profile</a>
-                    <a href="#">Recent Complaints</a>
+                    <button id="recent-complaints-btn">Recent Complaints</button>
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
                         <button type="submit" class="logout-btn">Log Out</button>
                     </form>
                 </div>
+            </div>
         </nav>
     </header>
 
@@ -281,10 +338,49 @@
         <a href="{% url 'report_issue' %}" class="fab" title="Report an Issue">
             <span class="material-icons">add</span>
         </a>
+
+        <div class="filter-container">
+            <h4>Filter by Issue</h4>
+            <div class="filter-group" id="filter-group">
+                <div class="filter-option">
+                    <input type="checkbox" id="filter-pothole" value="pothole" checked>
+                    <label for="filter-pothole">Potholes</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="filter-street_light" value="street_light" checked>
+                    <label for="filter-street_light">Street Lights</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="filter-garbage" value="garbage" checked>
+                    <label for="filter-garbage">Garbage</label>
+                </div>
+                <div class="filter-option">
+                    <input type="checkbox" id="filter-other" value="other" checked>
+                    <label for="filter-other">Other</label>
+                </div>
+            </div>
+        </div>
     </main>
 
+    <div id="recent-complaints-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Recent Complaints</h3>
+                <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            </div>
+            <div id="modal-body-content" class="modal-body">
+                <div class="modal-loader">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+
     <script>
-        // --- Dropdown Menu Logic ---
+        // --- Global Variables ---
+        var map;
+        var heat;
+
+        // --- Dropdown Menu Logic (No Change) ---
         const menuButton = document.getElementById('user-menu-button');
         const dropdownMenu = document.getElementById('dropdown-menu');
         menuButton.addEventListener('click', (event) => {
@@ -296,96 +392,179 @@
             dropdownMenu.style.display = 'none';
         });
 
-        // --- Map Tile Layers ---
-        var streetMap = L.tileLayer(
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            { attribution: '&copy; OpenStreetMap' }
-        );
+        
+        /*
+        =========================================
+        NEW/UPDATED SCRIPT: Map & Heatmap Logic
+        =========================================
+        */
+        function initializeMap() {
+            // --- Map Tile Layers ---
+            var streetMap = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                { attribution: '&copy; OpenStreetMap' }
+            );
+            var darkMap = L.tileLayer(
+                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                { attribution: '&copy; CARTO' }
+            );
+            var satelliteMap = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                { attribution: 'Tiles &copy; Esri' }
+            );
 
-        var darkMap = L.tileLayer(
-            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-            { attribution: '&copy; CARTO' }
-        );
+            // --- Initialize Map ---
+            map = L.map('map', {
+                center: [22.3145, 87.3093],
+                zoom: 15, 
+                layers: [streetMap] // Default base layer
+            });
 
-        var satelliteMap = L.tileLayer(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            { attribution: 'Tiles &copy; Esri' }
-        );
+            // --- Create Heat Layer ---
+            heat = L.heatLayer([], {
+                radius: 28,
+                blur: 10,
+                maxZoom: 17,
+                max: 1.2,
+                opacity: 0.95,
+                gradient: {
+                    0.1: 'cyan', 0.3: 'orange', 0.6: 'orange', 0.8: 'red', 1.0: 'red'
+                }
+            }).addTo(map);
 
-        // --- Initialize Map ---
-        // Note: I fixed your zoom level. 100 is too high, 15 is good for a campus.
-        var map = L.map('map', {
-            center: [22.3145, 87.3093],
-            zoom: 15, 
-            layers: [streetMap] // Default base layer
-        });
+            // --- Layer Controls ---
+            var baseMaps = {
+                "Street": streetMap, "Dark": darkMap, "Satellite": satelliteMap
+            };
+            var overlayMaps = { "Problem Hotspots": heat };
+            L.control.layers(baseMaps, overlayMaps).addTo(map);
 
-        // --- Create Heat Layer ---
-        // Initialize the heat layer with an EMPTY array.
-        var heat = L.heatLayer([], {
-            radius: 28,
-            blur: 10,
-            maxZoom: 17,
-            max: 1.2,
-            opacity: 0.95,
-            gradient: {
-                0.1: 'cyan',
-                0.3: 'orange',
-                0.6: 'orange',
-                0.8: 'red',
-                1.0: 'red'
-            }
-        }).addTo(map);
+            // --- Add Markers ---
+            L.marker([22.3196, 87.3123]).addTo(map).bindPopup('Main Building');
+            L.marker([22.3180, 87.3099]).addTo(map).bindPopup('Central Library');
 
-        // --- FETCH DATA FROM DJANGO API ---
-        // This runs when the page has finished loading
-        document.addEventListener('DOMContentLoaded', function() {
-            // Fetch data from the URL we created in urls.py
-            fetch("{% url 'issue_data_api' %}")
+            // --- Adjust Heat Radius on Zoom ---
+            map.on('zoomend', function () {
+                var zoom = map.getZoom();
+                var newRadius = 14 + 3 * (zoom - 13);
+                heat.setOptions({ radius: newRadius });
+            });
+        }
+
+        /**
+         * NEW: Fetches heatmap data based on selected filters
+         */
+        function updateHeatmap() {
+            if (!heat) return; // Don't run if heat layer isn't initialized
+
+            // 1. Get all selected issue types
+            const checkedBoxes = document.querySelectorAll('#filter-group input[type="checkbox"]:checked');
+            const selectedTypes = Array.from(checkedBoxes).map(cb => cb.value);
+
+            // 2. Build the query URL
+            const url = new URL("{% url 'issue_data_api' %}", window.location.origin);
+            selectedTypes.forEach(type => {
+                url.searchParams.append('types[]', type);
+            });
+            
+            console.log("Fetching heatmap data from:", url.toString());
+
+            // 3. Fetch data and update heatmap
+            fetch(url)
                 .then(response => response.json())
                 .then(dataPoints => {
-                    // 'dataPoints' is now the list from our database
-                    // e.g., [[22.319, 87.312, 0.9], ...]
-                    
-                    // Set the heatmap's data to these new points
+                    // 'dataPoints' is now the filtered list from our database
                     heat.setLatLngs(dataPoints);
-                    
-                    console.log("Heatmap data loaded from database.");
+                    console.log("Heatmap data loaded for types:", selectedTypes);
                 })
                 .catch(error => {
                     console.error('Error fetching heatmap data:', error);
                 });
+        }
+
+        /*
+        =========================================
+        NEW SCRIPT: Recent Complaints Modal Logic
+        =========================================
+        */
+        const modal = document.getElementById('recent-complaints-modal');
+        const openModalBtn = document.getElementById('recent-complaints-btn');
+        const closeModalBtn = document.getElementById('modal-close-btn');
+        const modalBody = document.getElementById('modal-body-content');
+
+        // Function to open the modal and fetch data
+        function openRecentComplaints() {
+            modal.style.display = 'flex'; // Show modal overlay
+            dropdownMenu.style.display = 'none'; // Hide dropdown
+            
+            // Show loader
+            modalBody.innerHTML = '<div class="modal-loader">Loading...</div>';
+
+            // Fetch data from our new API
+            fetch("{% url 'recent_issues_api' %}")
+                .then(response => response.json())
+                .then(data => {
+                    // Build the HTML for the list
+                    let html = '<ul class="complaint-list">';
+                    if (data.length === 0) {
+                        html += '<div class="modal-loader">No recent complaints found.</div>';
+                    }
+
+                    data.forEach(item => {
+                        html += `
+                            <li class="complaint-item">
+                                <div class="complaint-item-header">
+                                    <span class="complaint-type">${item.issue_type}</span>
+                                    <span class="complaint-user">by ${item.reporter_username}</span>
+                                </div>
+                                <p class="complaint-desc">${item.description}</p>
+                                <div class="complaint-footer">
+                                    <span>${item.reported_at}</span>
+                                    <a href="${item.detail_url}">View Details</a>
+                                </div>
+                            </li>
+                        `;
+                    });
+                    html += '</ul>';
+                    
+                    // Update modal body with the list
+                    modalBody.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching recent complaints:', error);
+                    modalBody.innerHTML = '<div class="modal-loader">Error loading complaints. Please try again.</div>';
+                });
+        }
+
+        // Function to close the modal
+        function closeRecentComplaints() {
+            modal.style.display = 'none';
+        }
+
+        // --- Event Listeners ---
+        
+        // Modal listeners
+        openModalBtn.addEventListener('click', openRecentComplaints);
+        closeModalBtn.addEventListener('click', closeRecentComplaints);
+        modal.addEventListener('click', (event) => {
+            // Close if user clicks on the overlay (outside the content)
+            if (event.target === modal) {
+                closeRecentComplaints();
+            }
         });
 
-        // --- Adjust Heat Radius Dynamically on Zoom ---
-        map.on('zoomend', function () {
-            var zoom = map.getZoom();
-            var newRadius = 14 + 3 * (zoom - 13);
-            heat.setOptions({ radius: newRadius });
+        // Filter listeners
+        const filterCheckboxes = document.querySelectorAll('#filter-group input[type="checkbox"]');
+        filterCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateHeatmap);
         });
 
-        // --- Add Markers ---
-        L.marker([22.3196, 87.3123])
-            .addTo(map)
-            .bindPopup('Main Building');
+        // --- Run on Page Load ---
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            updateHeatmap(); // Load initial heatmap data
+        });
 
-        L.marker([22.3180, 87.3099])
-            .addTo(map)
-            .bindPopup('Central Library');
-
-        // --- Layer Controls ---
-        var baseMaps = {
-            "Street": streetMap,
-            "Dark": darkMap,
-            "Satellite": satelliteMap
-        };
-
-        var overlayMaps = {
-            "Problem Hotspots": heat
-        };
-
-        L.control.layers(baseMaps, overlayMaps).addTo(map);
     </script>
 </body>
-
 </html>

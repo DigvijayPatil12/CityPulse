@@ -126,6 +126,30 @@
             box-shadow: 0 0 0 4px var(--primary-light);
         }
 
+        /* --- NEW: SHOW PASSWORD STYLE --- */
+        .form-show-password {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Space between checkbox and label */
+            margin-top: -8px; /* Pulls it up slightly under the password field */
+            margin-bottom: 20px; /* Pushes the login button down */
+            padding-left: 2px; /* Tiny alignment */
+        }
+        .form-show-password label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            /* Remove default label margin */
+            margin-bottom: 0; 
+        }
+        .form-show-password input[type="checkbox"] {
+            cursor: pointer;
+            width: 15px; 
+            height: 15px;
+        }
+        /* --- END NEW STYLE --- */
+
         /* --- ERROR MESSAGE --- */
         .error-message-box {
             background-color: var(--error-light);
@@ -147,7 +171,7 @@
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            margin-top: 15px;
+            /* margin-top: 15px; --- Removed, as margin is on checkbox div now */
             font-weight: 600;
             font-size: 1.05rem;
             font-family: 'Poppins', sans-serif;
@@ -251,6 +275,10 @@
                        placeholder="Enter your password" required>
             </div>
 
+            <div class="form-show-password">
+                <input type="checkbox" id="show_password_check">
+                <label for="show_password_check">Show password</label>
+            </div>
             <button type="submit" class="log-in-btn">LOG IN</button>
 
             {% if next %}
@@ -273,6 +301,21 @@
             const usernameField = document.getElementById('id_username'); 
             const passwordField = document.getElementById('id_password'); 
             const errorBox = document.querySelector('.error-message-box');
+
+            // --- NEW: Show Password Logic ---
+            const showPasswordCheck = document.getElementById('show_password_check');
+            
+            showPasswordCheck.addEventListener('change', function() {
+                // Check if the checkbox is checked
+                if (this.checked) {
+                    // If checked, change type to 'text'
+                    passwordField.type = 'text';
+                } else {
+                    // If unchecked, change type back to 'password'
+                    passwordField.type = 'password';
+                }
+            });
+            // --- END NEW SCRIPT ---
 
             function setActiveMode(mode) {
                 if (mode === 'user') {

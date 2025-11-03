@@ -8,12 +8,9 @@ urlpatterns = [
     # 1. USER HOME Page (Default destination after user login)
     path('', views.home_page, name='home'), 
     
-    # 2. CONSOLIDATED LOGIN VIEW (Handles both user and admin paths)
-    # The view will be renamed to just LoginView
+    # 2. CONSOLIDATED LOGIN VIEW
     path('login/', views.LoginView.as_view(), name='login'), 
     
-    # 💥 REMOVE THIS LINE: path('admin/login/', views.AdminLoginView.as_view(), name='admin_login'), 💥
-
     # 3. Logout URL
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     
@@ -23,17 +20,27 @@ urlpatterns = [
     # 5. Report issue
     path('report/', views.report_issue_view, name='report_issue'), 
     
-    # 6. ADMIN HOME PAGE (Target for Admin login)
+    # 6. ADMIN HOME PAGE
     path('admin/home/', views.admin_home_page, name='admin_home'),
 
-     # 7. USER PROFILE PAGE (ADD THIS NEW LINE)
+    # 7. USER PROFILE PAGE
     path('profile/', views.user_profile, name='profile'),
 
-    # 8. NEW: ALL ISSUES LIST PAGE (Staff Only Access)
+    # 8. ALL ISSUES LIST PAGE (Staff Only)
     path('issues/', views.all_issues_list, name='all_issues'),
 
+    # --- API Endpoints ---
     path('api/issue-data/', views.issue_data_api, name='issue_data_api'),
+    
+    # 9. --- THIS IS THE NEW LINE ---
+    path('api/recent-issues/', views.recent_issues_api, name='recent_issues_api'),
 
+    # 10. (Placeholder) Issue Detail Page
+    # If you don't have this, the 'Recent Complaints' link won't work
+    # We can create this page next if you want.
+    # path('issue/<int:pk>/', views.issue_detail_view, name='issue_detail'),
 
+    # 10. --- ADD THIS NEW LINE for the Detail Page ---
+    path('issue/<int:pk>/', views.issue_detail_view, name='issue_detail'),
 
 ]
