@@ -387,7 +387,7 @@
             </div>
         </div>
 
-        <form id="reportForm" method="post" action="{% url 'report_issue_view' %}" enctype="multipart/form-data" onsubmit="return finalValidation()">
+        <form id="reportForm" method="post" action="{% url 'report_issue' %}" enctype="multipart/form-data" onsubmit="return finalValidation()">
             {% csrf_token %}
             
             <div class="form-step active">

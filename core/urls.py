@@ -1,4 +1,4 @@
-# core/urls.py (Final Version)
+# core/urls.py
 
 from django.urls import path
 from django.contrib.auth import views as auth_views
@@ -26,10 +26,16 @@ urlpatterns = [
     # 7. USER PROFILE PAGE
     path('profile/', views.user_profile, name='profile'),
 
-    # 8. ALL ISSUES LIST PAGE (Staff Only) - PATH AND NAME UPDATED
+    # 7b. NEW: User Status Update URL
+    path('profile/issue/<int:issue_id>/status/update/', views.user_update_issue_status, name='user_update_issue_status'),
+
+    # 7c. NEW: User Delete Issue URL
+    path('profile/issue/<int:issue_id>/delete/', views.user_delete_issue, name='user_delete_issue'),
+    
+    # 8. ALL ISSUES LIST PAGE (Staff Only)
     path('admin/issues/', views.all_issues_list, name='all_issues_list'),
     
-    # 8b. NEW: Status Update URL
+    # 8b. Status Update URL (Admin)
     path('admin/issues/<int:issue_id>/status/update/', views.update_issue_status, name='update_issue_status'),
 
     # --- API Endpoints ---

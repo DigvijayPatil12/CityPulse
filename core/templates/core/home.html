@@ -211,6 +211,102 @@
     }
     .complaint-footer a { font-weight: 600; text-decoration: none; color: var(--primary-hover); }
     .modal-loader { text-align: center; padding: 40px; font-size: 1rem; color: #555; }
+    
+    /* =========================================
+    MODIFIED STYLES: Filter Panel & NEW Toggle
+    =========================================
+    */
+    .filter-panel {
+        display: block; /* Visible by default on desktop */
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 200px;
+        background-color: var(--card-background);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 999;
+        overflow: hidden;
+    }
+    .filter-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+    }
+    .filter-header .material-icons {
+        font-size: 1.25rem;
+        color: var(--primary-color);
+    }
+    .filter-body {
+        display: flex;
+        flex-direction: column;
+        padding: 8px;
+    }
+    .filter-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 10px 12px;
+        border: none;
+        background-color: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: left;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #444;
+        transition: background-color 0.2s ease;
+    }
+    .filter-btn .material-icons {
+        font-size: 1.25rem;
+    }
+    .filter-btn:hover {
+        background-color: #f5f5f5;
+    }
+    .filter-btn.active {
+        background-color: #e8f3ff;
+        color: var(--primary-hover);
+        font-weight: 600;
+    }
+    
+    /* * THIS IS THE FIX:
+     * The problematic rule that forced the icon color was removed from here.
+     */
+    
+
+    /* NEW: Style for the mobile filter toggle button */
+    .filter-toggle-btn {
+        display: none; /* Hidden by default on desktop */
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 48px;
+        height: 48px;
+        background-color: var(--card-background);
+        border: none;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000; /* Above map, below opened panel */
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+    }
+    .filter-toggle-btn .material-icons {
+        font-size: 24px;
+    }
+    /* =========================================
+    END NEW STYLES
+    =========================================
+    */
+
     @media (max-width: 768px) {
         .app-header .btn-primary { display: none; }
         .fab { display: flex; }
@@ -220,6 +316,39 @@
         #user-menu-button { width: 38px; height: 38px; }
         .modal-header { padding: 12px 15px; }
         .modal-body { padding: 8px 15px 15px 15px; }
+
+        /* =========================================
+        NEW: Mobile Filter Styles
+        =========================================
+        */
+        .filter-toggle-btn {
+            display: flex; /* Show the toggle button on mobile */
+        }
+
+        .filter-panel {
+            display: none; /* Hide panel by default on mobile */
+            width: 180px;
+            top: 65px; /* Position below the new toggle icon */
+            right: 10px;
+            z-index: 1001; /* Must be on top of toggle button */
+        }
+        
+        .filter-panel.show-on-mobile {
+            display: block; /* Show panel when active */
+        }
+        
+        /* =========================================
+        THIS IS THE LINE I CHANGED:
+        Increased margin from 55px to 65px to create a gap.
+        =========================================
+        */
+        .leaflet-control-layers {
+            margin-top: 65px !important;
+        }
+        /* =========================================
+        END: Mobile Filter Styles
+        =========================================
+        */
     }
     </style>
 </head>
@@ -250,6 +379,45 @@
 
     <main id="map-container">
         <div id="map"></div>
+
+        <button id="filter-toggle-btn" class="filter-toggle-btn" title="Toggle Layers">
+            <span class="material-icons">layers</span>
+        </button>
+
+        <div id="filter-panel" class="filter-panel">
+            <div class="filter-header">
+                <span class="material-icons">layers</span>
+                <span>Map Layers</span>
+            </div>
+            <div class="filter-body">
+                <button class="filter-btn active" data-layer="garbage">
+                    <span class="material-icons" style="color: #4CAF50;">eco</span>
+                    <span>Garbage</span>
+                </button>
+                <button class="filter-btn active" data-layer="pothole">
+                    <span class="material-icons" style="color: #E64A19;">local_fire_department</span>
+                    <span>Pothole</span>
+                </button>
+                <button class="filter-btn active" data-layer="water">
+                    <span class="material-icons" style="color: #1976D2;">water_drop</span>
+                    <span>Waterlogging</span>
+                </button>
+                <button class="filter-btn active" data-layer="electricity">
+                    <span class="material-icons" style="color: #FFC107;">bolt</span>
+                    <span>Electricity</span>
+                </button>
+                <button class="filter-btn active" data-layer="stray_animal">
+                    <span class="material-icons" style="color: #795548;">pets</span>
+                    <span>Stray Animal</span>
+                </button>
+                <button class="filter-btn active" data-layer="other">
+                    <span class="material-icons" style="color: #9E9E9E;">help_outline</span>
+                    <span>Other</span>
+                </button>
+            </div>
+        </div>
+
+
         <a href="{% url 'report_issue' %}" class="fab" title="Report an Issue">
             <span class="material-icons">add</span>
         </a>
@@ -307,16 +475,16 @@
         const potholeIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-red.png' });
         const waterIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-blue.png' });
         const electricityIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-orange.png' });
-        const strayAnimalIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-gold.png' }); // Use 'gold'
+        const strayAnimalIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-grey.png' });
         const otherIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-grey.png' });
 
-        // --- MARKER ICONS (FIX #1) ---
+        // --- MARKER ICONS (Unchanged, all lowercase keys) ---
         const markerIcons = {
             'garbage': garbageIcon,
             'pothole': potholeIcon,
             'waterlogging': waterIcon,
             'electricity_issue': electricityIcon,
-            'stray_animals': strayAnimalIcon, // <-- FIXED: Changed to plural
+            'stray_animal': strayAnimalIcon,
             'other': otherIcon
         };
 
@@ -344,23 +512,21 @@
 
             allLayers = [garbageLayer, potholeLayer, waterLayer, electricityLayer, strayAnimalLayer, otherLayer];
 
-            // --- Layer Controls (Unchanged) ---
+            // --- Layer Controls (MODIFIED) ---
             var baseMaps = {
                 "Street": streetMap, "Dark": darkMap, "Satellite": satelliteMap
             };
-            var overlayMaps = {
-                "Garbage": garbageLayer.addTo(map),
-                "Pothole": potholeLayer.addTo(map),
-                "Waterlogging": waterLayer.addTo(map),
-                "Electricity Issue": electricityLayer.addTo(map),
-                "Stray Animal": strayAnimalLayer.addTo(map), // This text label is fine
-                "Other": otherLayer.addTo(map)
-            };
-            L.control.layers(baseMaps, overlayMaps).addTo(map);
 
-            // --- Markers (Unchanged) ---
-            // L.marker([22.3196, 87.3123]).addTo(map).bindPopup('Main Building');
-            // L.marker([22.3180, 87.3099]).addTo(map).bindPopup('Central Library');
+            // Add all layers to the map by default (to match the "active" buttons)
+            garbageLayer.addTo(map);
+            potholeLayer.addTo(map);
+            waterLayer.addTo(map);
+            electricityLayer.addTo(map);
+            strayAnimalLayer.addTo(map);
+            otherLayer.addTo(map);
+            
+            // We create the layer control with ONLY the base maps.
+            L.control.layers(baseMaps, {}).addTo(map);
         }
 
         /**
@@ -379,26 +545,17 @@
                     dataPoints.forEach(point => {
                         const latLng = [point.lat, point.lon];
                         
-                        // --- THIS IS THE ROBUST FIX (Unchanged) ---
-                        // 1. Check if point.type exists (is not null/undefined)
-                        // 2. Trim whitespace from the start and end
-                        // 3. Convert to lowercase
-                        // 4. Replace spaces with underscores
+                        // --- THIS IS THE ROBUST FIX ---
                         const type = point.type ? 
                                      point.type.trim().toLowerCase().replace(/ /g, '_') : 
                                      'other'; // Default to 'other' if type is missing
                         // ---------------------------------
 
-                        // 1. Get the correct icon using the new 'type'
-                        // This will now find 'stray_animals' in markerIcons
                         const icon = markerIcons[type] || markerIcons['other'];
-                        
-                        // 2. Create the marker
                         const marker = L.marker(latLng, { 
                             icon: icon
                         });
 
-                        // 3. Add the popup (using original point.type for display)
                         const popupContent = `
                             <b style="text-transform: capitalize;">${point.type.replace('_', ' ')}</b>
                             <p>${point.description || 'No description.'}</p>
@@ -406,7 +563,7 @@
                         `;
                         marker.bindPopup(popupContent);
 
-                        // 4. Add the marker to the correct layer (FIX #2)
+                        // 4. Add the marker to the correct layer using the new 'type'
                         switch (type) {
                             case 'garbage':
                                 marker.addTo(garbageLayer);
@@ -420,7 +577,7 @@
                             case 'electricity_issue':
                                 marker.addTo(electricityLayer);
                                 break;
-                            case 'stray_animals': // <-- FIXED: Changed to plural
+                            case 'stray_animal':
                                 marker.addTo(strayAnimalLayer);
                                 break;
                             default: // 'other'
@@ -490,6 +647,69 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializeMap();
             fetchAndPopulateLayers();
+
+            /*
+            =========================================
+            Filter Panel Button Logic (Unchanged)
+            =========================================
+            */
+            // Map the data-layer attribute names to the actual layer variables
+            const layerMapping = {
+                'garbage': garbageLayer,
+                'pothole': potholeLayer,
+                'water': waterLayer,
+                'electricity': electricityLayer,
+                'stray_animal': strayAnimalLayer,
+                'other': otherLayer
+            };
+
+            // Get all the filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+
+            // Add a click event listener to each button
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const layerName = button.getAttribute('data-layer');
+                    const layer = layerMapping[layerName];
+
+                    if (layer) {
+                        // Check if the map ALREADY has the layer
+                        if (map.hasLayer(layer)) {
+                            map.removeLayer(layer);
+                            button.classList.remove('active');
+                        } else {
+                            // If it doesn't have the layer, add it
+                            map.addLayer(layer);
+                            button.classList.add('active');
+                        }
+                    }
+                });
+            });
+
+            /*
+            =========================================
+            Mobile Filter Toggle Logic (Unchanged)
+            =========================================
+            */
+            const filterToggleBtn = document.getElementById('filter-toggle-btn');
+            const filterPanel = document.getElementById('filter-panel');
+
+            // Toggle panel visibility when mobile icon is clicked
+            filterToggleBtn.addEventListener('click', (event) => {
+                filterPanel.classList.toggle('show-on-mobile');
+                event.stopPropagation(); // Prevents map click event from firing
+            });
+
+            // Close mobile panel if user clicks on the map
+            map.on('click', () => {
+                filterPanel.classList.remove('show-on-mobile');
+            });
+            
+            // Prevent clicks *inside* the panel from closing it
+            filterPanel.addEventListener('click', (event) => {
+                event.stopPropagation();
+            });
+
         });
 
     </script>

@@ -13,18 +13,18 @@ from decimal import Decimal, InvalidOperation
 from django.db.models.functions import TruncSecond 
 from django.contrib.auth import get_user_model 
 from django.views.decorators.http import require_POST
-from django.db.models import F 
-from django.db import transaction # ADDED: Necessary for safe database operations
+from django.db.models import F, Count
+from django.db import transaction 
 
 from .forms import CustomUserCreationForm 
-from .models import IssueReport, IssueImage, ISSUE_TYPES, STATUS_CHOICES 
+from .models import IssueReport, IssueImage, ISSUE_TYPES, STATUS_CHOICES, STATUS_RESOLVED, STATUS_REPORTED, STATUS_IN_PROGRESS # Ensure all constants are imported
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import logging 
 
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------
-# 1. CONSOLIDATED LOGIN VIEW
+# 1. CONSOLIDATED LOGIN VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 class LoginView(LoginView):
     template_name = 'core/login.html'
@@ -47,7 +47,7 @@ class LoginView(LoginView):
             return redirect('home')
 
 # ----------------------------------------------------------------------
-# 2. USER HOME PAGE VIEW
+# 2. USER HOME PAGE VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 @login_required 
 def home_page(request):
@@ -55,7 +55,7 @@ def home_page(request):
 
 
 # ----------------------------------------------------------------------
-# 3. ADMIN HOME PAGE VIEW
+# 3. ADMIN HOME PAGE VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 @login_required
 def admin_home_page(request):
@@ -66,7 +66,7 @@ def admin_home_page(request):
 
 
 # ----------------------------------------------------------------------
-# 4. REPORT ISSUE VIEW (MODIFIED FOR AJAX)
+# 4. REPORT ISSUE VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 @login_required 
 def report_issue_view(request):
@@ -76,15 +76,14 @@ def report_issue_view(request):
         description = request.POST.get('description')
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
-        sub_category = request.POST.get('sub_category') # Holds sub-category OR 'other_issue_text'
+        sub_category = request.POST.get('sub_category') 
         
         # --- SERVER-SIDE VALIDATION ---
         if not all([issue_type, description, latitude, longitude]):
-            # CRITICAL: Return JsonResponse for AJAX error, not render/redirect
             return JsonResponse({
                 'success': False, 
                 'message': 'Missing required fields for issue type, location, or description.'
-            }, status=400) # Use 400 Bad Request
+            }, status=400) 
             
         if issue_type == 'other' and not sub_category:
             return JsonResponse({
@@ -130,19 +129,16 @@ def report_issue_view(request):
                             messages.warning(request, f"Report saved, but image '{image_file.name}' could not be uploaded.")
 
             # --- SUCCESS RESPONSE (REDIRECT) ---
-            # This triggers the 'response.redirected' block in your frontend JS.
             messages.success(request, 'Your issue has been successfully reported!')
             return redirect('home') 
 
         except (ValueError, InvalidOperation):
-            # CRITICAL: Return JsonResponse for AJAX error
             return JsonResponse({
                 'success': False, 
                 'message': 'Invalid location coordinates submitted. Please check the map.'
             }, status=400)
         except Exception as e:
             logger.error(f"Unexpected server error during report submission: {e}", exc_info=True)
-            # CRITICAL: Return JsonResponse for AJAX error
             return JsonResponse({
                 'success': False, 
                 'message': 'An unexpected server error occurred. Please try again.'
@@ -152,7 +148,7 @@ def report_issue_view(request):
     return render(request, 'core/report_issue.html')
 
 # ----------------------------------------------------------------------
-# 5. OTHER VIEWS
+# 5. OTHER VIEWS (UPDATED: user_profile, user_update_issue_status, user_delete_issue)
 # ----------------------------------------------------------------------
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
@@ -162,8 +158,63 @@ class SignUpView(CreateView):
 @login_required
 def user_profile(request):
     reported_issues = IssueReport.objects.filter(reporter=request.user).order_by('-reported_at')
-    context = {'reported_issues': reported_issues}
+    
+    # --- Calculate User Stats ---
+    total_reports = reported_issues.count()
+    resolved_issues = reported_issues.filter(status=STATUS_RESOLVED).count()
+    reputation_score = resolved_issues * 10 + (total_reports - resolved_issues) * 2 
+
+    context = {
+        'reported_issues': reported_issues,
+        'total_reports': total_reports,         
+        'resolved_issues': resolved_issues,     
+        'reputation_score': reputation_score,   
+        'STATUS_CHOICES': STATUS_CHOICES,       
+    }
     return render(request, 'core/profile.html', context)
+
+
+@require_POST
+@login_required
+def user_update_issue_status(request, issue_id):
+    # CRUCIAL: Check ownership
+    issue = get_object_or_404(IssueReport, id=issue_id, reporter=request.user) 
+    new_status = request.POST.get('status')
+    
+    # User can only change status to 'Reported' or 'In Progress'. 
+    # This allows a user to "dispute" a 'Resolved' status by setting it back to 'Reported'.
+    valid_user_statuses = [STATUS_REPORTED, STATUS_IN_PROGRESS]
+
+    if new_status and new_status in valid_user_statuses:
+        if issue.status != new_status:
+            issue.status = new_status
+            issue.save()
+            messages.success(request, f'Issue #{issue.id} status updated to {issue.get_status_display()}.')
+        else:
+            messages.info(request, f'Issue #{issue.id} status is already {issue.get_status_display()}.')
+    else:
+        messages.error(request, 'Invalid status or missing data.')
+        
+    redirect_url = request.META.get('HTTP_REFERER', reverse('profile'))
+    return redirect(redirect_url)
+
+@require_POST
+@login_required
+def user_delete_issue(request, issue_id):
+    # CRUCIAL: Check ownership
+    issue = get_object_or_404(IssueReport, id=issue_id, reporter=request.user) 
+    
+    # LOGIC UPDATE: Allow user to delete ANY issue they posted, regardless of status.
+    try:
+        issue.delete()
+        messages.success(request, f'Issue #{issue.id} successfully deleted.')
+    except Exception as e:
+        logger.error(f"Error deleting issue {issue_id}: {e}", exc_info=True)
+        messages.error(request, 'An unexpected error occurred during deletion.')
+        
+    redirect_url = reverse('profile')
+    return redirect(redirect_url)
+
 
 def is_staff_user(user):
     return user.is_staff
