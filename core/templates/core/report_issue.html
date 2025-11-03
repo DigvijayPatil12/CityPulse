@@ -387,7 +387,7 @@
             </div>
         </div>
 
-        <form id="reportForm" method="post" action="{% url 'report_issue' %}" enctype="multipart/form-data" onsubmit="return finalValidation()">
+        <form id="reportForm" method="post" action="{% url 'report_issue_view' %}" enctype="multipart/form-data" onsubmit="return finalValidation()">
             {% csrf_token %}
             
             <div class="form-step active">
@@ -623,7 +623,7 @@
                 return false; 
             }
 
-            // --- NEW: AJAX SUBMISSION HANDLER ---
+            // --- CRITICAL FIX: AJAX SUBMISSION HANDLER MODIFIED FOR DJANGO JsonResponse ---
             function handleAjaxSubmission() {
                 // 1. Create FormData object from the HTML form (handles files correctly)
                 const formData = new FormData(reportForm);
@@ -632,38 +632,54 @@
                 nextBtn.disabled = true;
                 nextBtn.querySelector('.material-icons').textContent = 'hourglass_top';
                 nextBtn.childNodes[0].textContent = 'Submitting... ';
+                errorMessage.textContent = ''; // Clear previous errors
                 
                 // 3. Perform the fetch request
                 fetch(reportForm.action, {
                     method: 'POST',
-                    // IMPORTANT: Do NOT set Content-Type header manually for file uploads
                     body: formData,
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                     }
                 })
                 .then(response => {
-                    // Check if the response was a redirect (Django returns 302 on success/redirect)
+                    // Check if the response was a redirect (Django uses 302 on success/redirect)
                     if (response.redirected) {
-                        window.location.href = response.url; // Follow the redirect (home or success)
-                        return;
+                        window.location.href = response.url; // Success! Follow the redirect.
+                        return null; // Stop further .then processing
                     }
-                    // If not a redirect, read the response text (likely the rendered form with errors)
-                    return response.text(); 
+                    
+                    // If not a redirect (i.e., server-side error like 400 or 500)
+                    if (!response.ok) {
+                        return response.json(); // Read the JSON error body from views.py
+                    }
+
+                    return {}; // Fallback for unexpected non-redirect, non-error status
                 })
-                .then(html => {
-                    if (html) {
-                        // If Django returned the rendered form with errors, replace the page content
-                        document.documentElement.innerHTML = html;
+                .then(data => {
+                    // This block executes if a redirect did NOT happen (i.e., an error)
+                    if (data && data.success === false) {
+                        // Display the error message returned from views.py JsonResponse
+                        errorMessage.textContent = data.message || 'An unknown server validation error occurred.';
+                        
+                        // Check if the error is location-related and jump to step 2
+                        if (data.message && data.message.includes('location')) {
+                            currentStep = 1;
+                            updateFormSteps();
+                        }
+                    } else if (data !== null) {
+                        // Handle unexpected state (success=true but no redirect, or empty JSON)
+                        console.warn("AJAX submission finished without redirect. Check server logs.");
+                        errorMessage.textContent = 'Submission successful, but failed to navigate. Please check your home page.';
                     }
-                    // If successful (and not redirected), this block shouldn't be reached, 
-                    // but we ensure buttons are reset just in case of non-redirect success.
+
+                    // Reset button state after handling the error
                     nextBtn.disabled = false;
                     nextBtn.querySelector('.material-icons').textContent = 'check_circle';
                     nextBtn.childNodes[0].textContent = 'Submit Report ';
                 })
                 .catch(error => {
-                    // Log catastrophic errors (network failure, etc.)
+                    // Log catastrophic errors (network failure, JSON parsing failure, etc.)
                     console.error('Submission failed:', error);
                     errorMessage.textContent = 'Network error during submission. Please check your connection.';
                     

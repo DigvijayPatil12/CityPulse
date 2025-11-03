@@ -24,6 +24,14 @@ DEBUG = 'RENDER' not in os.environ
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 
+
+# Set to True to enable Django's time zone support
+USE_TZ = True 
+
+# Set this to your desired local timezone.
+TIME_ZONE = 'Asia/Kolkata' # <--- CHANGE THIS TO YOUR LOCAL TIME ZONE
+
+
 # Application definition
 
 INSTALLED_APPS = [

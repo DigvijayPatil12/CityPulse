@@ -1,3 +1,5 @@
+# core/views.py
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.conf import settings
@@ -9,22 +11,20 @@ from django.contrib import messages
 from django.http import JsonResponse 
 from decimal import Decimal, InvalidOperation
 from django.db.models.functions import TruncSecond 
-from django.contrib.auth import get_user_model # Ensure this is always imported if used
-
-
+from django.contrib.auth import get_user_model 
+from django.views.decorators.http import require_POST
+from django.db.models import F 
+from django.db import transaction # ADDED: Necessary for safe database operations
 
 from .forms import CustomUserCreationForm 
-from .models import IssueReport, IssueImage #, Comment # Assuming Comment model exists for detail view
+from .models import IssueReport, IssueImage, ISSUE_TYPES, STATUS_CHOICES 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-import logging # 🚨 NEW: Use Python's logging for server errors
+import logging 
 
-# Set up logging for better error tracking
 logger = logging.getLogger(__name__)
 
-# User = get_user_model() # This is only needed in models.py, can be removed if not used here
-
 # ----------------------------------------------------------------------
-# 1. CONSOLIDATED LOGIN VIEW (Handles both user and admin)
+# 1. CONSOLIDATED LOGIN VIEW
 # ----------------------------------------------------------------------
 class LoginView(LoginView):
     template_name = 'core/login.html'
@@ -42,7 +42,7 @@ class LoginView(LoginView):
                 form.add_error(None, error_message)
                 return self.form_invalid(form)
         
-        else: # login_role == 'user'
+        else:
             login(self.request, user)
             return redirect('home')
 
@@ -66,86 +66,91 @@ def admin_home_page(request):
 
 
 # ----------------------------------------------------------------------
-# 4. REPORT ISSUE VIEW (UPDATED with CRITICAL Error Handling)
+# 4. REPORT ISSUE VIEW (MODIFIED FOR AJAX)
 # ----------------------------------------------------------------------
 @login_required 
 def report_issue_view(request):
     if request.method == 'POST':
-        # 1. Extract and validate required data from the POST request
+        # Retrieve all form data
         issue_type = request.POST.get('issue_type')
         description = request.POST.get('description')
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
-        sub_category = request.POST.get('sub_category')
+        sub_category = request.POST.get('sub_category') # Holds sub-category OR 'other_issue_text'
         
+        # --- SERVER-SIDE VALIDATION ---
         if not all([issue_type, description, latitude, longitude]):
-            messages.error(request, 'Missing required fields for issue type, location, or description.')
-            return render(request, 'core/report_issue.html')
-
+            # CRITICAL: Return JsonResponse for AJAX error, not render/redirect
+            return JsonResponse({
+                'success': False, 
+                'message': 'Missing required fields for issue type, location, or description.'
+            }, status=400) # Use 400 Bad Request
+            
+        if issue_type == 'other' and not sub_category:
+            return JsonResponse({
+                'success': False, 
+                'message': 'Please specify the issue in the text box for "Other" issue type.'
+            }, status=400)
+            
         try:
             # Type conversion and validation
             lat_decimal = Decimal(latitude.strip()).quantize(Decimal('0.000001'))
             lon_decimal = Decimal(longitude.strip()).quantize(Decimal('0.000001'))
 
-            # 2. Save the main IssueReport object
-            new_issue = IssueReport.objects.create(
-                reporter=request.user, 
-                issue_type=issue_type,
-                sub_category=sub_category if sub_category else None,
-                latitude=lat_decimal,
-                longitude=lon_decimal,
-                description=description,
-            )
-            
-            # --- 3. SEMANTIC ANALYSIS & INTENSITY CALCULATION ---
-            analyzer = SentimentIntensityAnalyzer()
-            sentiment_scores = analyzer.polarity_scores(description)
-            compound_score = sentiment_scores['compound']
-            
-            # Map score [-1.0, 1.0] to intensity [1.0, 0.0]
-            intensity_value = (1.0 - compound_score) / 2.0
-            
-            # 4. Save the new intensity
-            new_issue.intensity = Decimal.from_float(intensity_value).quantize(Decimal('0.01'))
-            new_issue.save()
-            # ---------------------------------------------------
+            with transaction.atomic():
+                # 1. Create the IssueReport object
+                new_issue = IssueReport.objects.create(
+                    reporter=request.user, 
+                    issue_type=issue_type,
+                    sub_category=sub_category if sub_category else None,
+                    latitude=lat_decimal,
+                    longitude=lon_decimal,
+                    description=description,
+                )
+                
+                # 2. Calculate and Save Sentiment/Intensity
+                analyzer = SentimentIntensityAnalyzer()
+                sentiment_scores = analyzer.polarity_scores(description)
+                compound_score = sentiment_scores['compound']
+                intensity_value = (1.0 - compound_score) / 2.0 
+                new_issue.intensity = Decimal.from_float(intensity_value).quantize(Decimal('0.01'))
+                new_issue.save()
 
-            # 5. Handle image uploads (up to 3 files)
-            images = request.FILES.getlist('issue_images') 
-            
-            if images:
-                for image_file in images[:3]: 
-                    try:
-                        # Attempt to create the IssueImage object, which saves the file to disk
-                        IssueImage.objects.create(
-                            issue=new_issue, 
-                            image=image_file
-                        )
-                    except Exception as file_error:
-                        # 🚨 CRITICAL ERROR LOGGING ADDED HERE 🚨
-                        # Log the error and print a message to the console to help debug
-                        logger.error(f"File Save Error for {image_file.name}: {file_error}", exc_info=True)
-                        print(f"\n🚨 FILE SAVE FAILED: Check your terminal for detailed traceback. Error: {file_error}\n")
-                        messages.warning(request, f"Report saved, but image '{image_file.name}' could not be uploaded.")
+                # 3. Handle Images
+                images = request.FILES.getlist('issue_images') 
+                if images:
+                    for image_file in images[:3]: 
+                        try:
+                            IssueImage.objects.create(
+                                issue=new_issue, 
+                                image=image_file
+                            )
+                        except Exception as file_error:
+                            logger.error(f"File Save Error for {image_file.name}: {file_error}", exc_info=True)
+                            messages.warning(request, f"Report saved, but image '{image_file.name}' could not be uploaded.")
 
-
-            # 6. Success message and redirect
+            # --- SUCCESS RESPONSE (REDIRECT) ---
+            # This triggers the 'response.redirected' block in your frontend JS.
             messages.success(request, 'Your issue has been successfully reported!')
             return redirect('home') 
 
         except (ValueError, InvalidOperation):
-            # Handle cases where latitude/longitude conversion fails
-            messages.error(request, 'Invalid location coordinates submitted.')
+            # CRITICAL: Return JsonResponse for AJAX error
+            return JsonResponse({
+                'success': False, 
+                'message': 'Invalid location coordinates submitted. Please check the map.'
+            }, status=400)
         except Exception as e:
-            # General error handling
             logger.error(f"Unexpected server error during report submission: {e}", exc_info=True)
-            messages.error(request, 'An unexpected server error occurred. Please try again.')
+            # CRITICAL: Return JsonResponse for AJAX error
+            return JsonResponse({
+                'success': False, 
+                'message': 'An unexpected server error occurred. Please try again.'
+            }, status=500)
 
-        # Fallback to re-render the form with error messages
-        return render(request, 'core/report_issue.html')
-
-    # For GET requests (display the form)
+    # Handle GET request: simply render the template
     return render(request, 'core/report_issue.html')
+
 # ----------------------------------------------------------------------
 # 5. OTHER VIEWS
 # ----------------------------------------------------------------------
@@ -154,59 +159,77 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login') 
     template_name = 'core/signup.html'
 
-# ----------------------------------------------------------------------
-# 6. USER PROFILE VIEW
-# ----------------------------------------------------------------------
 @login_required
 def user_profile(request):
-    """
-    Displays the user's profile page with their stats and activity.
-    """
     reported_issues = IssueReport.objects.filter(reporter=request.user).order_by('-reported_at')
-    
-    context = {
-        'reported_issues': reported_issues
-    }
-    
+    context = {'reported_issues': reported_issues}
     return render(request, 'core/profile.html', context)
 
-# ----------------------------------------------------------------------
-# 7. ADMIN/STAFF VIEWS
-# ----------------------------------------------------------------------
 def is_staff_user(user):
     return user.is_staff
 
 @login_required
-@user_passes_test(is_staff_user) # Only staff users can access this page
+@user_passes_test(is_staff_user)
 def all_issues_list(request):
-    """
-    Retrieves all reported issues for display on a staff-only dashboard.
-    """
-    issues = IssueReport.objects.select_related('reporter').order_by('-reported_at')
+    issues = IssueReport.objects.select_related('reporter').all()
     
+    issue_type = request.GET.get('issue_type')
+    if issue_type:
+        issues = issues.filter(issue_type=issue_type)
+
+    status = request.GET.get('status')
+    if status:
+        issues = issues.filter(status=status)
+
+    sort_by = request.GET.get('sort')
+    if sort_by == 'intensity_desc':
+        issues = issues.order_by(F('intensity').desc(nulls_last=True)) 
+    else:
+        issues = issues.order_by('-reported_at')
+        
     context = {
-        'issues': issues
+        'issues': issues,
+        'issue_types': ISSUE_TYPES,      
+        'status_choices': STATUS_CHOICES, 
     }
     return render(request, 'core/issue_list.html', context)
 
 
-# ----------------------------------------------------------------------
-# 8. --- API VIEW FOR HEATMAP ---
-# ----------------------------------------------------------------------
-def issue_data_api(request):
-    """
-    This is the API endpoint that provides heatmap data to Leaflet.
-    """
-    try:
-        selected_types = request.GET.getlist('types[]')
+@require_POST
+@login_required
+@user_passes_test(is_staff_user) 
+def update_issue_status(request, issue_id):
+    issue = get_object_or_404(IssueReport, id=issue_id)
+    new_status = request.POST.get('status')
+    valid_statuses = [c[0] for c in STATUS_CHOICES] 
+    
+    if new_status and new_status in valid_statuses:
+        if issue.status != new_status:
+            issue.status = new_status
+            issue.save()
+            messages.success(request, f'Issue #{issue.id} status updated to {new_status}.')
+        else:
+            messages.info(request, f'Issue #{issue.id} status is already {new_status}.')
+    else:
+        messages.error(request, 'Invalid status or missing data.')
+        
+    redirect_url = request.META.get('HTTP_REFERER', reverse('all_issues_list'))
+    return redirect(redirect_url)
 
+
+def issue_data_api(request):
+    try:
         issues = IssueReport.objects.all()
 
-        if selected_types:
-            issues = issues.filter(issue_type__in=selected_types)
-
         data_points = [
-            [float(issue.latitude), float(issue.longitude), float(issue.intensity)]
+            {
+                "lat": float(issue.latitude), 
+                "lon": float(issue.longitude), 
+                "intensity": float(issue.intensity),
+                "type": issue.issue_type,
+                "description": issue.description,
+                "status": issue.status 
+            }
             for issue in issues
         ]
         
@@ -215,24 +238,16 @@ def issue_data_api(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
-# ----------------------------------------------------------------------
-# 9. --- NEW API VIEW FOR RECENT COMPLAINTS ---
-# ----------------------------------------------------------------------
 @login_required
 def recent_issues_api(request):
-    """
-    This API endpoint provides data for the 'Recent Complaints' list.
-    """
     try:
         recent_issues = IssueReport.objects.select_related('reporter') \
                                            .order_by('-reported_at')[:15]
 
         data_list = []
         for issue in recent_issues:
-            detail_url = '#' # Placeholder
+            detail_url = '#' 
             try:
-                # Assuming 'issue_detail' URL name exists
                 detail_url = reverse('issue_detail', args=[issue.id])
             except:
                 pass 
@@ -254,23 +269,12 @@ def recent_issues_api(request):
         logger.error(f"Error fetching recent issues: {e}", exc_info=True)
         return JsonResponse({'error': 'Failed to load recent issues.'}, status=500)
 
-# ----------------------------------------------------------------------
-# 10. --- NEW: ISSUE DETAIL PAGE VIEW ---
-# ----------------------------------------------------------------------
 @login_required
 def issue_detail_view(request, pk):
-    """
-    Displays a single issue, its images, and its comments.
-    'pk' is the primary key (the ID) of the issue.
-    """
     try:
-        # Get the specific issue report, or show a 404 page if it doesn't exist
         issue = get_object_or_404(IssueReport, pk=pk)
-        
-        # Get all related images and comments
-        # These are 'reverse' lookups from our models.py
         images = issue.images.all()
-        comments = issue.comments.order_by('created_at').all()
+        comments = [] 
         
         context = {
             'issue': issue,
@@ -282,6 +286,6 @@ def issue_detail_view(request, pk):
         
     except Exception as e:
         messages.error(request, f"Error loading issue: {e}")
-        return redirect('home') # Send user home on a bad error
+        return redirect('home')
     
     return render(request, 'core/issue_detail.html', context)

@@ -2,8 +2,35 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from decimal import Decimal
+from django.utils import timezone # Added import for completeness if used elsewhere
 
 User = get_user_model()
+
+# =======================================================
+# 1. Define Standardized CHOICES OUTSIDE the Model
+# --- SYNCHRONIZED with report_issue.html options ---
+# =======================================================
+
+ISSUE_TYPES = [
+    ('garbage', 'Garbage'),
+    ('pothole', 'Pothole'),
+    ('waterlogging', 'Waterlogging'),
+    ('electricity_issue', 'Electricity Issue'),
+    ('stray_animal', 'Stray Animal'),
+    ('other', 'Other'),
+]
+
+# Use constants for status values to prevent typos
+STATUS_REPORTED = 'Reported'
+STATUS_IN_PROGRESS = 'In Progress'
+STATUS_RESOLVED = 'Resolved'
+
+STATUS_CHOICES = [
+    (STATUS_REPORTED, 'Reported'),
+    (STATUS_IN_PROGRESS, 'In Progress'),
+    (STATUS_RESOLVED, 'Resolved'),
+]
+
 
 # Model for the reported issue
 class IssueReport(models.Model):
@@ -16,19 +43,9 @@ class IssueReport(models.Model):
     )
     
     # Fields from the Issue Type step (Step 1)
-    ISSUE_CHOICES = [
-        ('garbage', 'Garbage'),
-        ('pothole', 'Pothole'),
-        ('waterlogging', 'Waterlogging'),
-        ('street_light', 'Broken Streetlight'),
-        # You can add the other categories here from your filter
-        ('accident', 'Road Accident Zone'),
-        ('crime', 'Crime Hotspot'),
-        ('other', 'Other'),
-    ]
     issue_type = models.CharField(
         max_length=50, 
-        choices=ISSUE_CHOICES,
+        choices=ISSUE_TYPES, 
         default='other',
         verbose_name="Type of Issue"
     )
@@ -52,26 +69,19 @@ class IssueReport(models.Model):
     # Fields from the Details step (Step 3)
     description = models.TextField()
 
-    # --- NEW FIELD FOR HEATMAP ---
-    # This field will store the "weight" of the point for the heatmap.
-    # We can set it to a default, or later use ML to change it.
+    # Field for Heatmap/Sorting
     intensity = models.DecimalField(
         max_digits=3, 
         decimal_places=2, 
         default=Decimal('0.5')
     )
-    # -----------------------------
     
     # Tracking information
     reported_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=20, 
-        default='Reported',
-        choices=[
-            ('Reported', 'Reported'),
-            ('In Progress', 'In Progress'),
-            ('Resolved', 'Resolved'),
-        ]
+        default=STATUS_REPORTED, 
+        choices=STATUS_CHOICES, 
     )
 
     def __str__(self):
