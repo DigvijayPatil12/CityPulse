@@ -1,4 +1,5 @@
 import os
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -71,14 +72,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
 
-# 💾 DATABASE (SQLite) 💾
-# WARNING: Data in this database WILL be lost on every service restart or deploy on Render's free tier.
+# 💾 DATABASE (PostgreSQL for Render/Production) 💾
+# ⭐️ CORRECTED: Removed 'conn_health_check=True' to fix the TypeError.
 DATABASES = {
-    'default': {
+    'default': dj_database_url.config(
+        # Fallback to local SQLite if DATABASE_URL is not set and DEBUG is True.
+        default=os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR}/db.sqlite3') if DEBUG else None,
+        conn_max_age=600,
+    )
+}
+
+# ⭐️ ADDED: A check to handle the case where DEBUG is False (production)
+# but DATABASE_URL is missing, which is highly unlikely on Render but a good guardrail.
+if not DATABASES['default']:
+    # Fallback for production (DEBUG=False) if environment variable is missing.
+    # This block should ideally not be reached on Render with a linked PostgreSQL database.
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
-}
 
 
 # Password validation
