@@ -19,6 +19,7 @@
         --header-height: 65px;
         --background-color: #f4f7f6;
         --card-background: #ffffff;
+        --text-primary: #212529; /* Added for new filter text */
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -29,6 +30,7 @@
         height: 100vh;
         overflow: hidden;
     }
+    /* --- App Header (Unchanged) --- */
     .app-header {
         display: flex;
         justify-content: space-between;
@@ -113,6 +115,8 @@
     .dropdown-content button:hover { background-color: #f1f1f1; }
     .dropdown-content form { margin: 0; }
     .dropdown-content .logout-btn { color: #e3342f; font-weight: 600; }
+    
+    /* --- Map & FAB (Unchanged) --- */
     #map-container { flex-grow: 1; position: relative; }
     #map { width: 100%; height: 100%; }
     .fab {
@@ -133,6 +137,8 @@
         text-decoration: none;
     }
     .fab .material-icons { font-size: 28px; }
+
+    /* --- Modal Styles (Unchanged) --- */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -192,7 +198,7 @@
         margin-bottom: 12px;
         border: 1px solid #e0e0e0;
     }
-    .complaint-item:last-child { border-bottom: 1px solid #e0e0e0; }
+    /* ... (rest of complaint-item styles unchanged) ... */
     .complaint-item-header {
         display: flex;
         justify-content: space-between;
@@ -212,12 +218,9 @@
     .complaint-footer a { font-weight: 600; text-decoration: none; color: var(--primary-hover); }
     .modal-loader { text-align: center; padding: 40px; font-size: 1rem; color: #555; }
     
-    /* =========================================
-    MODIFIED STYLES: Filter Panel & NEW Toggle
-    =========================================
-    */
+    /* --- Map Filter Panel (Unchanged) --- */
     .filter-panel {
-        display: block; /* Visible by default on desktop */
+        display: block; 
         position: absolute;
         top: 10px;
         right: 10px;
@@ -226,7 +229,9 @@
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         z-index: 999;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: calc(100vh - 85px); 
     }
     .filter-header {
         display: flex;
@@ -237,10 +242,10 @@
         font-size: 1rem;
         font-weight: 600;
         color: #333;
-    }
-    .filter-header .material-icons {
-        font-size: 1.25rem;
-        color: var(--primary-color);
+        position: sticky;
+        top: 0;
+        background-color: var(--card-background);
+        z-index: 2;
     }
     .filter-body {
         display: flex;
@@ -275,15 +280,8 @@
         color: var(--primary-hover);
         font-weight: 600;
     }
-    
-    /* * THIS IS THE FIX:
-     * The problematic rule that forced the icon color was removed from here.
-     */
-    
-
-    /* NEW: Style for the mobile filter toggle button */
     .filter-toggle-btn {
-        display: none; /* Hidden by default on desktop */
+        display: none; 
         position: absolute;
         top: 10px;
         right: 10px;
@@ -293,7 +291,7 @@
         border: none;
         border-radius: 50%;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        z-index: 1000; /* Above map, below opened panel */
+        z-index: 1000; 
         cursor: pointer;
         align-items: center;
         justify-content: center;
@@ -302,10 +300,50 @@
     .filter-toggle-btn .material-icons {
         font-size: 24px;
     }
+    
+    /* =========================================
+    NEW STYLES: For filters *inside* the modal
+    ========================================= */
+    .modal-filters {
+        display: flex;
+        gap: 15px;
+        padding: 10px 20px;
+        background-color: var(--card-background);
+        border-bottom: 1px solid #e0e0e0;
+        /* Stick to the bottom of the header */
+        position: sticky; 
+        top: 65px; /* Matches desktop header height */
+        z-index: 9;
+    }
+    .modal-filter-group {
+        flex: 1;
+    }
+    .modal-filter-group label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text-primary);
+    }
+    .modal-filter-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        background-color: #f9f9f9;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+    }
     /* =========================================
     END NEW STYLES
-    =========================================
-    */
+    ========================================= */
 
     @media (max-width: 768px) {
         .app-header .btn-primary { display: none; }
@@ -314,41 +352,36 @@
         .brand-title { font-size: 1.4rem; gap: 5px; }
         .brand-title .material-icons { font-size: 1.6rem; }
         #user-menu-button { width: 38px; height: 38px; }
-        .modal-header { padding: 12px 15px; }
+        .modal-header { padding: 12px 15px; height: 50px; } /* Set mobile header height */
         .modal-body { padding: 8px 15px 15px 15px; }
 
-        /* =========================================
-        NEW: Mobile Filter Styles
-        =========================================
-        */
         .filter-toggle-btn {
-            display: flex; /* Show the toggle button on mobile */
+            display: flex; 
         }
 
         .filter-panel {
-            display: none; /* Hide panel by default on mobile */
+            display: none; 
             width: 180px;
-            top: 65px; /* Position below the new toggle icon */
+            top: 65px; 
             right: 10px;
-            z-index: 1001; /* Must be on top of toggle button */
+            z-index: 1001; 
+            max-height: calc(100vh - 130px); 
         }
         
         .filter-panel.show-on-mobile {
-            display: block; /* Show panel when active */
+            display: block; 
         }
         
-        /* =========================================
-        THIS IS THE LINE I CHANGED:
-        Increased margin from 55px to 65px to create a gap.
-        =========================================
-        */
         .leaflet-control-layers {
             margin-top: 65px !important;
         }
-        /* =========================================
-        END: Mobile Filter Styles
-        =========================================
-        */
+
+        /* --- NEW: Mobile styles for modal filters --- */
+        .modal-filters {
+            flex-direction: column;
+            gap: 10px;
+            top: 50px; /* Matches mobile header height */
+        }
     }
     </style>
 </head>
@@ -380,43 +413,61 @@
     <main id="map-container">
         <div id="map"></div>
 
-        <button id="filter-toggle-btn" class="filter-toggle-btn" title="Toggle Layers">
-            <span class="material-icons">layers</span>
+        <button id="filter-toggle-btn" class="filter-toggle-btn" title="Toggle Filters">
+            <span class="material-icons">filter_list</span>
         </button>
 
         <div id="filter-panel" class="filter-panel">
             <div class="filter-header">
-                <span class="material-icons">layers</span>
-                <span>Map Layers</span>
+                <span class="material-icons" style="color: #007bff">task_alt</span>
+                <span>Issue Status</span>
             </div>
-            <div class="filter-body">
-                <button class="filter-btn active" data-layer="garbage">
+            <div class="filter-body" id="status-filters">
+                <button class="filter-btn active" data-status="Reported">
+                    <span class="material-icons" style="color: #dc3545;">report</span>
+                    <span>Reported</span>
+                </button>
+                <button class="filter-btn active" data-status="In Progress">
+                    <span class="material-icons" style="color: #17a2b8;">sync</span>
+                    <span>In Progress</span>
+                </button>
+                <button class="filter-btn" data-status="Resolved">
+                    <span class="material-icons" style="color: #28a745;">check_circle</span>
+                    <span>Resolved</span>
+                </button>
+            </div>
+            
+            <div class="filter-header" style="border-top: 1px solid #eee;">
+                <span class="material-icons" style="color: #6f42c1">layers</span>
+                <span>Issue Type</span>
+            </div>
+            <div class="filter-body" id="issue-type-filters">
+                <button class="filter-btn active" data-type="garbage">
                     <span class="material-icons" style="color: #4CAF50;">eco</span>
                     <span>Garbage</span>
                 </button>
-                <button class="filter-btn active" data-layer="pothole">
+                <button class="filter-btn active" data-type="pothole">
                     <span class="material-icons" style="color: #E64A19;">local_fire_department</span>
                     <span>Pothole</span>
                 </button>
-                <button class="filter-btn active" data-layer="water">
+                <button class="filter-btn active" data-type="waterlogging">
                     <span class="material-icons" style="color: #1976D2;">water_drop</span>
                     <span>Waterlogging</span>
                 </button>
-                <button class="filter-btn active" data-layer="electricity">
+                <button class="filter-btn active" data-type="electricity_issue">
                     <span class="material-icons" style="color: #FFC107;">bolt</span>
                     <span>Electricity</span>
                 </button>
-                <button class="filter-btn active" data-layer="stray_animal">
+                <button class="filter-btn active" data-type="stray_animal">
                     <span class="material-icons" style="color: #795548;">pets</span>
                     <span>Stray Animal</span>
                 </button>
-                <button class="filter-btn active" data-layer="other">
+                <button class="filter-btn active" data-type="other">
                     <span class="material-icons" style="color: #9E9E9E;">help_outline</span>
                     <span>Other</span>
                 </button>
             </div>
         </div>
-
 
         <a href="{% url 'report_issue' %}" class="fab" title="Report an Issue">
             <span class="material-icons">add</span>
@@ -426,8 +477,29 @@
     <div id="recent-complaints-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Recent Complaints</h3>
+                <h3 id="modal-title">Recent Complaints</h3>
                 <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            </div>
+
+            <div class="modal-filters">
+                <div class="modal-filter-group">
+                    <label for="modal-issue-filter">Filter by Issue:</label>
+                    <select id="modal-issue-filter" class="modal-filter-select">
+                        <option value="">All Issues</option>
+                        {% for value, label in issue_types_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-filter-group">
+                    <label for="modal-status-filter">Filter by Status:</label>
+                    <select id="modal-status-filter" class="modal-filter-select">
+                        <option value="">All Statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             <div id="modal-body-content" class="modal-body">
                 <div class="modal-loader">Loading...</div>
@@ -436,12 +508,12 @@
     </div>
     
     <script>
-        // --- Global Variables ---
+        // --- Global Variables (Unchanged) ---
         var map;
         var garbageLayer, potholeLayer, waterLayer, electricityLayer, strayAnimalLayer, otherLayer;
         var allLayers = [];
 
-        // --- Dropdown Menu Logic (No Change) ---
+        // --- Dropdown Menu Logic (Unchanged) ---
         const menuButton = document.getElementById('user-menu-button');
         const dropdownMenu = document.getElementById('dropdown-menu');
         menuButton.addEventListener('click', (event) => {
@@ -454,12 +526,6 @@
         });
 
         
-        /*
-        =========================================
-        MODIFIED SCRIPT: Map & Marker Logic
-        =========================================
-        */
-
         // --- Marker Icons (Unchanged) ---
         const iconBaseUrl = 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers/img/';
         const shadowUrl = iconBaseUrl + 'marker-shadow.png';
@@ -470,7 +536,6 @@
             popupAnchor: [1, -34],
             shadowSize: [41, 41]
         };
-
         const garbageIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-green.png' });
         const potholeIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-red.png' });
         const waterIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-blue.png' });
@@ -478,7 +543,6 @@
         const strayAnimalIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-grey.png' });
         const otherIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-grey.png' });
 
-        // --- MARKER ICONS (Unchanged, all lowercase keys) ---
         const markerIcons = {
             'garbage': garbageIcon,
             'pothole': potholeIcon,
@@ -489,20 +553,18 @@
         };
 
 
+        // --- Map Initialization (Unchanged) ---
         function initializeMap() {
-            // --- Map Tile Layers (Unchanged) ---
             var streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
             var darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' });
             var satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' });
 
-            // --- Initialize Map (Unchanged) ---
             map = L.map('map', {
                 center: [22.3145, 87.3093],
                 zoom: 15, 
                 layers: [streetMap]
             });
 
-            // --- Layer Groups (Unchanged) ---
             garbageLayer = L.layerGroup();
             potholeLayer = L.layerGroup();
             waterLayer = L.layerGroup();
@@ -511,50 +573,42 @@
             otherLayer = L.layerGroup();
 
             allLayers = [garbageLayer, potholeLayer, waterLayer, electricityLayer, strayAnimalLayer, otherLayer];
+            allLayers.forEach(layer => layer.addTo(map));
 
-            // --- Layer Controls (MODIFIED) ---
             var baseMaps = {
                 "Street": streetMap, "Dark": darkMap, "Satellite": satelliteMap
             };
-
-            // Add all layers to the map by default (to match the "active" buttons)
-            garbageLayer.addTo(map);
-            potholeLayer.addTo(map);
-            waterLayer.addTo(map);
-            electricityLayer.addTo(map);
-            strayAnimalLayer.addTo(map);
-            otherLayer.addTo(map);
             
-            // We create the layer control with ONLY the base maps.
             L.control.layers(baseMaps, {}).addTo(map);
         }
 
-        /**
-         * --- MODIFIED: Fetches data and sorts it into layers ---
-         */
-        function fetchAndPopulateLayers() {
+        // --- Clear Layers (Unchanged) ---
+        function clearAllLayers() {
+            allLayers.forEach(layer => layer.clearLayers());
+        }
+
+        // --- Fetch/Populate MAP Layers (Unchanged) ---
+        function fetchAndPopulateLayers(queryString = '') {
             if (!map) return;
-            
-            const url = "{% url 'issue_data_api' %}";
-            console.log("Fetching marker data from:", url);
+            clearAllLayers();
+            const baseUrl = "{% url 'issue_data_api' %}";
+            const url = baseUrl + queryString; 
+            console.log("Fetching map data from:", url);
 
             fetch(url)
                 .then(response => response.json())
                 .then(dataPoints => {
-                    
+                    if (dataPoints.error) {
+                        console.error('API Error:', dataPoints.error);
+                        return;
+                    }
                     dataPoints.forEach(point => {
                         const latLng = [point.lat, point.lon];
-                        
-                        // --- THIS IS THE ROBUST FIX ---
                         const type = point.type ? 
                                      point.type.trim().toLowerCase().replace(/ /g, '_') : 
-                                     'other'; // Default to 'other' if type is missing
-                        // ---------------------------------
-
+                                     'other'; 
                         const icon = markerIcons[type] || markerIcons['other'];
-                        const marker = L.marker(latLng, { 
-                            icon: icon
-                        });
+                        const marker = L.marker(latLng, { icon: icon });
 
                         const popupContent = `
                             <b style="text-transform: capitalize;">${point.type.replace('_', ' ')}</b>
@@ -563,56 +617,101 @@
                         `;
                         marker.bindPopup(popupContent);
 
-                        // 4. Add the marker to the correct layer using the new 'type'
                         switch (type) {
-                            case 'garbage':
-                                marker.addTo(garbageLayer);
-                                break;
-                            case 'pothole':
-                                marker.addTo(potholeLayer);
-                                break;
-                            case 'waterlogging':
-                                marker.addTo(waterLayer);
-                                break;
-                            case 'electricity_issue':
-                                marker.addTo(electricityLayer);
-                                break;
-                            case 'stray_animal':
-                                marker.addTo(strayAnimalLayer);
-                                break;
-                            default: // 'other'
-                                marker.addTo(otherLayer);
+                            case 'garbage':         marker.addTo(garbageLayer); break;
+                            case 'pothole':         marker.addTo(potholeLayer); break;
+                            case 'waterlogging':    marker.addTo(waterLayer); break;
+                            case 'electricity_issue': marker.addTo(electricityLayer); break;
+                            case 'stray_animal':    marker.addTo(strayAnimalLayer); break;
+                            default:                marker.addTo(otherLayer); break;
                         }
                     });
-                    
-                    console.log("Categorized marker data loaded.");
+                    console.log(`Loaded ${dataPoints.length} filtered markers.`);
                 })
                 .catch(error => {
                     console.error('Error fetching marker data:', error);
                 });
         }
+        
+        // --- Get MAP Filter Query String (Unchanged) ---
+        function getActiveFilterQueryString() {
+            const issueTypeFilters = document.querySelectorAll('#issue-type-filters .filter-btn.active');
+            const statusFilters = document.querySelectorAll('#status-filters .filter-btn.active');
+
+            const typeParams = [...issueTypeFilters].map(btn => `type=${encodeURIComponent(btn.dataset.type)}`);
+            const statusParams = [...statusFilters].map(btn => `status=${encodeURIComponent(btn.dataset.status)}`);
+
+            const allParams = [...typeParams, ...statusParams];
+            
+            return allParams.length > 0 ? '?' + allParams.join('&') : '';
+        }
+
+        // --- Update MAP Filters (Unchanged) ---
+        function updateMapFilters() {
+            const queryString = getActiveFilterQueryString(); 
+            fetchAndPopulateLayers(queryString);
+        }
+
 
         /*
         =========================================
-        Recent Complaints Modal Logic (Unchanged)
+        MODIFIED: Recent Complaints Modal Logic
         =========================================
         */
         const modal = document.getElementById('recent-complaints-modal');
         const openModalBtn = document.getElementById('recent-complaints-btn');
         const closeModalBtn = document.getElementById('modal-close-btn');
         const modalBody = document.getElementById('modal-body-content');
+        const modalTitle = document.getElementById('modal-title');
+        
+        // --- NEW: Get references to the modal's internal filters ---
+        const modalIssueFilter = document.getElementById('modal-issue-filter');
+        const modalStatusFilter = document.getElementById('modal-status-filter');
 
-        function openRecentComplaints() {
-            modal.style.display = 'flex';
-            dropdownMenu.style.display = 'none';
+        // --- NEW HELPER FUNCTION: Gets query string *from the modal's filters* ---
+        function getModalFilterQueryString() {
+            const issueType = modalIssueFilter.value;
+            const status = modalStatusFilter.value;
+            
+            const params = [];
+            if (issueType) {
+                params.push(`type=${encodeURIComponent(issueType)}`);
+            }
+            if (status) {
+                params.push(`status=${encodeURIComponent(status)}`);
+            }
+            
+            // Returns a string like "?type=garbage&status=Reported" or ""
+            return params.length > 0 ? '?' + params.join('&') : '';
+        }
+
+        // --- NEW FUNCTION: Fetches complaints based on modal filters ---
+        // This is the core logic, split from the 'open' event
+        function fetchFilteredComplaints() {
             modalBody.innerHTML = '<div class="modal-loader">Loading...</div>';
+            
+            // 1. Get the query string *from the modal's dropdowns*
+            const queryString = getModalFilterQueryString();
 
-            fetch("{% url 'recent_issues_api' %}")
+            // 2. Build the API URL
+            const baseUrl = "{% url 'recent_issues_api' %}";
+            const url = baseUrl + queryString;
+            console.log("Fetching modal data from:", url);
+
+            // 3. Update modal title based on whether filters are active
+            if (queryString) {
+                modalTitle.textContent = 'Filtered Complaints';
+            } else {
+                modalTitle.textContent = 'Recent Complaints';
+            }
+
+            // 4. Fetch the filtered data
+            fetch(url) 
                 .then(response => response.json())
                 .then(data => {
                     let html = '<ul class="complaint-list">';
                     if (data.length === 0) {
-                        html += '<div class="modal-loader">No recent complaints found.</div>';
+                        html += '<div class="modal-loader">No complaints found matching these filters.</div>';
                     }
                     data.forEach(item => {
                         html += `
@@ -637,54 +736,56 @@
                     modalBody.innerHTML = '<div class="modal-loader">Error loading complaints. Please try again.</div>';
                 });
         }
+
+        // --- MODIFIED: This function now just opens the modal and calls the fetcher ---
+        function openRecentComplaints() {
+            modal.style.display = 'flex';
+            dropdownMenu.style.display = 'none';
+            
+            // When opening, reset the filters to "All" and fetch
+            modalIssueFilter.value = "";
+            modalStatusFilter.value = "";
+            
+            // Call the fetcher function
+            fetchFilteredComplaints();
+        }
+
         function closeRecentComplaints() {
             modal.style.display = 'none';
         }
+        
+        // --- MODIFIED: Add event listeners ---
         openModalBtn.addEventListener('click', openRecentComplaints);
         closeModalBtn.addEventListener('click', closeRecentComplaints);
 
-        // --- Run on Page Load ---
+        // --- NEW: Add listeners to the modal's filters ---
+        // When a filter is changed, re-fetch the list
+        modalIssueFilter.addEventListener('change', fetchFilteredComplaints);
+        modalStatusFilter.addEventListener('change', fetchFilteredComplaints);
+
+
+        // --- Run on Page Load (Unchanged) ---
         document.addEventListener('DOMContentLoaded', function() {
+            
             initializeMap();
-            fetchAndPopulateLayers();
 
             /*
             =========================================
-            Filter Panel Button Logic (Unchanged)
+            MAP Filter Panel Button Logic (Unchanged)
             =========================================
             */
-            // Map the data-layer attribute names to the actual layer variables
-            const layerMapping = {
-                'garbage': garbageLayer,
-                'pothole': potholeLayer,
-                'water': waterLayer,
-                'electricity': electricityLayer,
-                'stray_animal': strayAnimalLayer,
-                'other': otherLayer
-            };
+            const allFilterButtons = document.querySelectorAll('#filter-panel .filter-btn');
 
-            // Get all the filter buttons
-            const filterButtons = document.querySelectorAll('.filter-btn');
-
-            // Add a click event listener to each button
-            filterButtons.forEach(button => {
+            allFilterButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    const layerName = button.getAttribute('data-layer');
-                    const layer = layerMapping[layerName];
-
-                    if (layer) {
-                        // Check if the map ALREADY has the layer
-                        if (map.hasLayer(layer)) {
-                            map.removeLayer(layer);
-                            button.classList.remove('active');
-                        } else {
-                            // If it doesn't have the layer, add it
-                            map.addLayer(layer);
-                            button.classList.add('active');
-                        }
-                    }
+                    button.classList.toggle('active');
+                    updateMapFilters();
                 });
             });
+
+            // Run map filter function on initial load (Unchanged)
+            updateMapFilters();
+
 
             /*
             =========================================
@@ -694,18 +795,15 @@
             const filterToggleBtn = document.getElementById('filter-toggle-btn');
             const filterPanel = document.getElementById('filter-panel');
 
-            // Toggle panel visibility when mobile icon is clicked
             filterToggleBtn.addEventListener('click', (event) => {
                 filterPanel.classList.toggle('show-on-mobile');
-                event.stopPropagation(); // Prevents map click event from firing
+                event.stopPropagation(); 
             });
 
-            // Close mobile panel if user clicks on the map
             map.on('click', () => {
                 filterPanel.classList.remove('show-on-mobile');
             });
             
-            // Prevent clicks *inside* the panel from closing it
             filterPanel.addEventListener('click', (event) => {
                 event.stopPropagation();
             });

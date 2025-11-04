@@ -47,11 +47,17 @@ class LoginView(LoginView):
             return redirect('home')
 
 # ----------------------------------------------------------------------
-# 2. USER HOME PAGE VIEW (UNCHANGED)
+# 2. *** MODIFIED VIEW: home_page ***
+# We now pass the filter choices to the template for the modal
 # ----------------------------------------------------------------------
 @login_required 
 def home_page(request):
-    return render(request, 'core/home.html', {'user': request.user})
+    context = {
+        'user': request.user,
+        'issue_types_choices': ISSUE_TYPES, # Pass issue types
+        'status_choices': STATUS_CHOICES, # Pass status choices
+    }
+    return render(request, 'core/home.html', context)
 
 
 # ----------------------------------------------------------------------
@@ -148,7 +154,7 @@ def report_issue_view(request):
     return render(request, 'core/report_issue.html')
 
 # ----------------------------------------------------------------------
-# 5. OTHER VIEWS (UPDATED: user_profile, user_update_issue_status, user_delete_issue)
+# 5. OTHER VIEWS (UNCHANGED)
 # ----------------------------------------------------------------------
 class SignUpView(CreateView):
     form_class = CustomUserCreationForm
@@ -182,7 +188,6 @@ def user_update_issue_status(request, issue_id):
     new_status = request.POST.get('status')
     
     # User can only change status to 'Reported' or 'In Progress'. 
-    # This allows a user to "dispute" a 'Resolved' status by setting it back to 'Reported'.
     valid_user_statuses = [STATUS_REPORTED, STATUS_IN_PROGRESS]
 
     if new_status and new_status in valid_user_statuses:
@@ -204,7 +209,6 @@ def user_delete_issue(request, issue_id):
     # CRUCIAL: Check ownership
     issue = get_object_or_404(IssueReport, id=issue_id, reporter=request.user) 
     
-    # LOGIC UPDATE: Allow user to delete ANY issue they posted, regardless of status.
     try:
         issue.delete()
         messages.success(request, f'Issue #{issue.id} successfully deleted.')
@@ -268,9 +272,24 @@ def update_issue_status(request, issue_id):
     return redirect(redirect_url)
 
 
+# ----------------------------------------------------------------------
+# 6. API VIEW (UNCHANGED from last time)
+# ----------------------------------------------------------------------
 def issue_data_api(request):
     try:
+        # Start with all issues
         issues = IssueReport.objects.all()
+
+        # Get lists of filters from query params
+        status_filters = request.GET.getlist('status')
+        type_filters = request.GET.getlist('type')
+
+        # Apply filters if they are provided in the URL
+        if status_filters:
+            issues = issues.filter(status__in=status_filters)
+        
+        if type_filters:
+            issues = issues.filter(issue_type__in=type_filters)
 
         data_points = [
             {
@@ -284,19 +303,43 @@ def issue_data_api(request):
             for issue in issues
         ]
         
+        logger.info(f"Returning {len(data_points)} filtered issues for API request.")
         return JsonResponse(data_points, safe=False)
         
     except Exception as e:
+        logger.error(f"Error in issue_data_api: {e}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
 
+
+# ----------------------------------------------------------------------
+# 7. *** MODIFIED VIEW: recent_issues_api ***
+# This view now accepts single, independent filters from the modal
+# ----------------------------------------------------------------------
 @login_required
 def recent_issues_api(request):
     try:
-        recent_issues = IssueReport.objects.select_related('reporter') \
-                                           .order_by('-reported_at')[:15]
+        # Start with all issues, including reporter data
+        issues = IssueReport.objects.select_related('reporter').all()
+
+        # --- MODIFICATION ---
+        # Get single filter values. Use .get() for dropdowns.
+        status_filter = request.GET.get('status', '') # Get 'status', default to empty string
+        type_filter = request.GET.get('type', '')     # Get 'type', default to empty string
+
+        # Apply filters *only if* they are provided and not empty
+        if status_filter:
+            issues = issues.filter(status=status_filter)
+        
+        if type_filter:
+            issues = issues.filter(issue_type=type_filter)
+        # --- END MODIFICATION ---
+
+        # Apply sorting and limit *after* filtering
+        # Increased limit to 25 to provide a better scrollable list
+        filtered_recent_issues = issues.order_by('-reported_at')[:25] 
 
         data_list = []
-        for issue in recent_issues:
+        for issue in filtered_recent_issues: 
             detail_url = '#' 
             try:
                 detail_url = reverse('issue_detail', args=[issue.id])
@@ -320,6 +363,9 @@ def recent_issues_api(request):
         logger.error(f"Error fetching recent issues: {e}", exc_info=True)
         return JsonResponse({'error': 'Failed to load recent issues.'}, status=500)
 
+# ----------------------------------------------------------------------
+# 8. ISSUE DETAIL VIEW (UNCHANGED)
+# ----------------------------------------------------------------------
 @login_required
 def issue_detail_view(request, pk):
     try:

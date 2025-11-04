@@ -1,0 +1,84 @@
+<form method="GET" action="" class="filter-bar">
+    
+    <div class="filter-group">
+        <label for="issue-filter">Filter by Issue:</label>
+        <select name="issue_type" id="issue-filter">
+            <option value="">All Issues</option>
+            {% for issue in issue_types %}
+                <option value="{{ issue }}" {% if issue == request.GET.issue_type %}selected{% endif %}>
+                    {{ issue }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label for="status-filter">Filter by Status:</label>
+        <select name="status" id="status-filter">
+            <option value="">All Statuses</option>
+            <option value="Pending" {% if 'Pending' == request.GET.status %}selected{% endif %}>Pending</option>
+            <option value="In Progress" {% if 'In Progress' == request.GET.status %}selected{% endif %}>In Progress</option>
+            <option value="Resolved" {% if 'Resolved' == request.GET.status %}selected{% endif %}>Resolved</option>
+        </select>
+    </div>
+
+    <button type="submit" class="filter-button">Apply Filters</button>
+
+</form>
+
+<hr> ```
+
+### 2. The Python View File
+
+Now, you need to make the filters actually *work*. You'll modify the view function that renders `feed.html`.
+
+This file is located at:
+* `core/views.py`
+
+#### What to add in `core/views.py`:
+
+You need to find the view function for your feed (it might be named `feed`, `all_complaints`, `issue_list`, etc.). Inside that function, you'll:
+
+1.  **Get** the filter values from the `request.GET` object.
+2.  **Filter** your database query based on those values.
+3.  **Pass** the list of available issue types to your template so the dropdown is populated automatically.
+
+Here's an example of how that view function might look (assuming your model is named `Complaint`):
+
+```python
+# Inside core/views.py
+from django.shortcuts import render
+from .models import Complaint  # Make sure to import your model
+
+def feed_view(request): # Or whatever your view function is named
+    
+    # --- 1. Get filter data from the URL ---
+    selected_issue_type = request.GET.get('issue_type', '')
+    selected_status = request.GET.get('status', '')
+
+    # --- 2. Start with all complaints ---
+    complaints = Complaint.objects.all().order_by('-created_at') # Get all, newest first
+
+    # --- 3. Apply filters if they exist ---
+    if selected_issue_type:
+        complaints = complaints.filter(issue_type=selected_issue_type) # Adjust field name
+        
+    if selected_status:
+        complaints = complaints.filter(status=selected_status) # Adjust field name
+
+    # --- 4. Get unique issue types for the dropdown ---
+    # (Assuming 'issue_type' is a field on your Complaint model)
+    issue_types = Complaint.objects.values_list('issue_type', flat=True).distinct()
+    
+    # (Assuming 'status' is a field on your Complaint model)
+    # If statuses are dynamic, you'd get them like this:
+    # statuses = Complaint.objects.values_list('status', flat=True).distinct()
+    # For this example, we'll assume statuses are fixed (Pending, Resolved...)
+
+    context = {
+        'complaints': complaints,
+        'issue_types': issue_types,
+        # 'statuses': statuses, # Uncomment if your statuses are dynamic
+    }
+    
+    return render(request, 'core/feed.html', context)
