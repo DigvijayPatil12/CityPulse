@@ -1,3 +1,4 @@
+# Cache Buster 13-11-2025-V2
 Django
 Pillow
 gunicorn
@@ -6,5 +7,7 @@ dj-database-url
 psycopg2-binary
 vaderSentiment
 python-decouple
+cloudinary
+cloudinary-storage
 
 

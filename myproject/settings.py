@@ -2,44 +2,33 @@ import os
 import dj_database_url
 from pathlib import Path
 
-# settings.py (Quick Fix - Option B)
-DEBUG = False
-
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    '.railway.app', # <-- Allows the public domain
-]
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # 🔑 SECURITY & HOSTS 🔑
-# SECURITY WARNING: keep the secret key used in production secret!
-# Fetches key from the Render Environment Variable (SECRET_KEY) for production.
-# The hardcoded value is only a fallback for local development.
+# Fetches key from the Render Environment Variable (SECRET_KEY).
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-8%n*vah1@k7onuf3zcvjbx70ri1rz%vc&l^f%0^uyp_u8ugvyu')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Checks if the RENDER environment variable is set (meaning we are on Render)
-# and sets DEBUG=False for security.
+# Check the RENDER env var to set DEBUG=False for production, or default to True for local.
 DEBUG = 'RENDER' not in os.environ 
 
-# ALLOWED_HOSTS is essential when DEBUG=False. Fetches host from Render variable.
+# ALLOWED_HOSTS is essential when DEBUG=False.
+# We read the host list from the environment variable (Render URL) for security.
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
-
+# If the app is running in debug mode (local), accept all hosts for convenience.
+if DEBUG:
+    ALLOWED_HOSTS = ['*']
 
 # Set to True to enable Django's time zone support
 USE_TZ = True 
 
 # Set this to your desired local timezone.
-TIME_ZONE = 'Asia/Kolkata' # <--- CHANGE THIS TO YOUR LOCAL TIME ZONE
+TIME_ZONE = 'Asia/Kolkata' # Ensure this is your desired local time zone
 
 
 # Application definition
@@ -52,15 +41,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    # ⭐️ ADDED: Cloudinary for free media storage
+    'cloudinary_storage', 
+    'cloudinary',
 ]
 
 
 # 🛡️ MIDDLEWARE 🛡️
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # ⭐️ ADDED: WhiteNoise Middleware for serving static files in production.
-    # It MUST be listed directly after SecurityMiddleware.
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # ⭐️ ADDED: WhiteNoise Middleware MUST be listed directly after SecurityMiddleware.
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -90,30 +81,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
 
-# 💾 DATABASE (PostgreSQL for Render/Production) 💾
-# ⭐️ CORRECTED: Removed 'conn_health_check=True' to fix the TypeError.
+# 💾 DATABASE (Using the Railway DB via Render's Env Var) 💾
+# We must use the DATABASE_URL environment variable (set on Render) 
+# which points to your external Railway PostgreSQL service.
 DATABASES = {
     'default': dj_database_url.config(
-        # Fallback to local SQLite if DATABASE_URL is not set and DEBUG is True.
-        default=os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR}/db.sqlite3') if DEBUG else None,
+        # Fallback to local SQLite only if DEBUG is True and no DATABASE_URL is set.
+        default=os.environ.get('DATABASE_URL') if not DEBUG else f'sqlite:///{BASE_DIR}/db.sqlite3',
         conn_max_age=600,
     )
 }
 
-# ⭐️ ADDED: A check to handle the case where DEBUG is False (production)
-# but DATABASE_URL is missing, which is highly unlikely on Render but a good guardrail.
+# ⭐️ ADDED: A critical guardrail for production environment (DEBUG=False).
+# If the DATABASE_URL variable is missing in production, this prevents Django from failing silently.
 if not DATABASES['default']:
-    # Fallback for production (DEBUG=False) if environment variable is missing.
-    # This block should ideally not be reached on Render with a linked PostgreSQL database.
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    raise Exception("DATABASE_URL environment variable is required when DEBUG is False.")
 
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# Password validation... (No changes needed here)
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -130,25 +115,29 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+# Internationalization... (No changes needed here)
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
 USE_I18N = True
 
-USE_TZ = True
+
+# 🖼️ MEDIA FILES (User Uploads - CLOUDINARY) 🖼️
+# ⭐️ ADDED: Cloudinary configuration for free, permanent media storage.
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+
+# Tell Django to use Cloudinary for all user-uploaded files.
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'
+# MEDIA_ROOT is not strictly needed when using Cloudinary for storage.
 
 
-# 🖼️ STATIC FILES (CSS, JavaScript, Images) 🖼️
+# 📦 STATIC FILES (CSS, JavaScript) 📦
+# Standard Django settings for static files
 STATIC_URL = 'static/'
-
-# ⭐️ ADDED: The required setting for collectstatic to know where to save files.
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# ⭐️ ADDED: Tells Django/WhiteNoise to use compressed/cached static files for production.
+# ⭐️ ADDED: WhiteNoise Configuration for serving static files in production.
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -161,10 +150,6 @@ STORAGES = {
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Authentication settings
+# Authentication settings... (No changes needed here)
 LOGIN_URL = 'login' 
 LOGIN_REDIRECT_URL = 'role_redirect'
-
-# Media files (uploaded files like images)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
