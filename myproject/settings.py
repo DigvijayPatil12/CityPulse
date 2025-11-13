@@ -8,7 +8,7 @@ DEBUG = False
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    'citypulse-production-73fb.up.railway.app' # <-- Allows the public domain
+    'https://citypulse-production-73fb.up.railway.app' # <-- Allows the public domain
 ]
 
 
