@@ -1,6 +1,17 @@
 import os
 import dj_database_url
 from pathlib import Path
+from decouple import config # assuming you use python-decouple (which is common)
+
+# Read the ALLOWED_HOSTS from an environment variable, 
+# splitting the comma-separated string into a list.
+# We include 'localhost' and '127.0.0.1' for local testing.
+
+ALLOWED_HOSTS_STRING = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost')
+ALLOWED_HOSTS = ALLOWED_HOSTS_STRING.split(',')
+
+# Also ensure DEBUG is correctly set based on the environment
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
