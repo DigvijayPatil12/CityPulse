@@ -2,5 +2,6 @@ Django
 Pillow
 gunicorn
 whitenoise
+dj-database-url
 
 
