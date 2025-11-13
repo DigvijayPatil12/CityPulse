@@ -22,6 +22,13 @@
             --border-color: #dee2e6;
             --shadow: 0 4px 12px rgba(0,0,0,0.06);
             --border-radius: 12px;
+            /* New message colors for class usage */
+            --msg-success: #d4edda;
+            --msg-error: #f8d7da;
+            --msg-warning: #fff3cd;
+            --msg-success-border: #c3e6cb;
+            --msg-error-border: #f5c6cb;
+            --msg-warning-border: #ffeeba;
         }
 
         /* Base & Reset */
@@ -230,9 +237,9 @@
             margin-left: 10px;
         }
         /* Custom Status Styles based on value */
-        .status[data-status="Reported"] { background-color: #fff0c2; color: #856404; }
-        .status[data-status="In Progress"] { background-color: #d1ecf1; color: #0c5460; }
-        .status[data-status="Resolved"] { background-color: #d4edda; color: #155724; }
+        .status[data-status="reported"] { background-color: #fff0c2; color: #856404; }
+        .status[data-status="in_progress"] { background-color: #d1ecf1; color: #0c5460; }
+        .status[data-status="resolved"] { background-color: #d4edda; color: #155724; }
         .issue-actions {
             display: flex;
             gap: 8px;
@@ -277,6 +284,27 @@
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        /* Flash Message Styles */
+        .flash-message {
+            padding: 10px 20px; 
+            text-align: center; 
+            border: 1px solid #ccc; 
+            margin-top: 60px;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: var(--msg-success); 
+            border-color: var(--msg-success-border);
+        }
+        .alert-error {
+            background: var(--msg-error); 
+            border-color: var(--msg-error-border);
+        }
+        .alert-warning, .alert-info {
+            background: var(--msg-warning); 
+            border-color: var(--msg-warning-border);
         }
 
         /* ----------------------------------- */
@@ -362,8 +390,8 @@
     </header>
 
     {% for message in messages %}
-    {# Basic message display for success/error/info #}
-    <div style="padding: 10px 20px; text-align: center; background: {% if message.tags == 'success' %}#d4edda{% elif message.tags == 'error' %}#f8d7da{% else %}#fff3cd{% endif %}; border: 1px solid #ccc; margin-top: 60px;">
+    {# FIXED: Changed inline style to use CSS classes based on message.tags #}
+    <div class="flash-message alert-{{ message.tags }}">
         {{ message }}
     </div>
     {% endfor %}
@@ -442,10 +470,10 @@
                                     {% csrf_token %}
                                     <select name="status" onchange="this.form.submit()" title="Change Status">
                                         <option value="" disabled selected>Change Status</option>
-                                        {# Filter to only allow Reported and In Progress #}
+                                        {# FIXED: Only show statuses user can change to, and only if it's not the current status #}
                                         {% for db_val, display_name in STATUS_CHOICES %}
-                                            {% if db_val != 'Resolved' %}
-                                                <option value="{{ db_val }}" {% if issue.status == db_val %}selected{% endif %}>
+                                            {% if db_val != 'resolved' and issue.status != db_val %}
+                                                <option value="{{ db_val }}">
                                                     Set to {{ display_name }}
                                                 </option>
                                             {% endif %}

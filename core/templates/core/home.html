@@ -19,7 +19,7 @@
         --header-height: 65px;
         --background-color: #f4f7f6;
         --card-background: #ffffff;
-        --text-primary: #212529; /* Added for new filter text */
+        --text-primary: #212529; 
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -138,7 +138,7 @@
     }
     .fab .material-icons { font-size: 28px; }
 
-    /* --- Modal Styles (Unchanged) --- */
+    /* --- Modal Styles (Mostly Unchanged) --- */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -166,12 +166,19 @@
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid #e0e0e0;
-        position: sticky;
+        position: sticky; /* Sticky header is fine */
         top: 0;
         background-color: var(--card-background);
         z-index: 10;
+        flex-shrink: 0; /* Make header not shrink */
     }
-    .modal-header h3 { font-size: 1.25rem; font-weight: 600; }
+    .modal-header h3 { 
+        font-size: 1.25rem; 
+        font-weight: 600;
+        margin: 0;
+        flex-grow: 1; 
+        text-align: center; 
+    }
     .modal-close-btn {
         background: none;
         border: none;
@@ -180,14 +187,20 @@
         color: #888;
         padding: 0;
         line-height: 1;
+        min-width: 50px; 
+        text-align: right;
     }
     .modal-close-btn:hover { color: #333; }
     .modal-body {
-        overflow-y: auto;
+        overflow-y: auto; /* This is the main scroller */
         flex-grow: 1;
         width: 100%;
         max-width: 900px;
         margin: 0 auto;
+        padding: 20px;
+    }
+    /* Separate padding for list body */
+    #modal-list-body {
         padding: 8px 20px 20px 20px;
     }
     .complaint-list { list-style: none; padding: 0; margin: 0; }
@@ -198,7 +211,6 @@
         margin-bottom: 12px;
         border: 1px solid #e0e0e0;
     }
-    /* ... (rest of complaint-item styles unchanged) ... */
     .complaint-item-header {
         display: flex;
         justify-content: space-between;
@@ -301,20 +313,17 @@
         font-size: 24px;
     }
     
-    /* =========================================
-    NEW STYLES: For filters *inside* the modal
-    ========================================= */
+    /* --- Modal List Filters (Unchanged) --- */
     .modal-filters {
         display: flex;
         gap: 15px;
         padding: 10px 20px;
         background-color: var(--card-background);
         border-bottom: 1px solid #e0e0e0;
-        /* Stick to the bottom of the header */
-        position: sticky; 
-        top: 65px; /* Matches desktop header height */
         z-index: 9;
+        flex-shrink: 0; /* This is correct */
     }
+    
     .modal-filter-group {
         flex: 1;
     }
@@ -341,8 +350,93 @@
         background-position: right 12px center;
         background-size: 16px;
     }
+    
+    /* --- Back Button & Detail View (Unchanged) --- */
+    #modal-back-btn {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        cursor: pointer;
+        padding: 0;
+        display: none; /* Hidden by default */
+        min-width: 50px; /* Match close button */
+        text-align: left;
+    }
+    .detail-view-content { padding: 0; }
+    .detail-view-content h4 { 
+        font-size: 1.5rem; 
+        font-weight: 600;
+        margin: 0 0 5px; 
+        color: var(--primary-color);
+    }
+    .detail-view-content p { 
+        font-size: 1rem; 
+        margin: 4px 0 12px; 
+        line-height: 1.6;
+    }
+    .detail-view-content .meta-data { 
+        font-size: 0.9rem; 
+        color: #555; 
+        border-bottom: 1px solid #eee; 
+        padding-bottom: 10px;
+    }
+    .detail-view-content .meta-data strong { color: var(--text-primary); }
+    .detail-view-content .description { margin-top: 15px; }
+
+    .detail-images-container {
+        margin-top: 20px;
+    }
+    .detail-images-container h5 { 
+        font-size: 1.1rem; 
+        font-weight: 600; 
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+    }
+    .detail-images-grid {
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 10px; 
+        margin-top: 15px;
+    }
+    .detail-images-grid a {
+        display: block;
+    }
+    .detail-images-grid img {
+        width: 120px; 
+        height: 120px;
+        object-fit: cover; 
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        transition: transform 0.2s;
+    }
+    .detail-images-grid img:hover {
+        transform: scale(1.05);
+    }
+    
     /* =========================================
-    END NEW STYLES
+    *** THE FIX ***
+    This is the CSS that was breaking the scroll.
+    I have removed 'overflow: hidden'.
+    ========================================= */
+    #modal-view-list {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; /* Make this view grow */
+        /* overflow: hidden; <-- THIS WAS THE BUG. It has been removed. */
+        min-height: 0; /* Added for flexbox stability */
+    }
+    /* =========================================
+    This rule is also essential.
+    It tells the list body to grow and scroll.
+    ========================================= */
+    #modal-list-body {
+        flex-grow: 1; /* Make this body grow */
+        overflow-y: auto; /* Make THIS body scroll */
+    }
+    /* =========================================
+    END OF FIX
     ========================================= */
 
     @media (max-width: 768px) {
@@ -352,8 +446,9 @@
         .brand-title { font-size: 1.4rem; gap: 5px; }
         .brand-title .material-icons { font-size: 1.6rem; }
         #user-menu-button { width: 38px; height: 38px; }
-        .modal-header { padding: 12px 15px; height: 50px; } /* Set mobile header height */
-        .modal-body { padding: 8px 15px 15px 15px; }
+        .modal-header { padding: 12px 15px; height: auto; min-height: 50px; } 
+        .modal-body { padding: 15px; }
+        #modal-list-body { padding: 8px 15px 15px 15px; }
 
         .filter-toggle-btn {
             display: flex; 
@@ -376,11 +471,15 @@
             margin-top: 65px !important;
         }
 
-        /* --- NEW: Mobile styles for modal filters --- */
+        /* --- Mobile styles for modal filters --- */
         .modal-filters {
             flex-direction: column;
             gap: 10px;
-            top: 50px; /* Matches mobile header height */
+            /* position: sticky was removed */
+        }
+        .detail-images-grid img {
+            width: 90px;
+            height: 90px;
         }
     }
     </style>
@@ -477,32 +576,39 @@
     <div id="recent-complaints-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
+                <button id="modal-back-btn">← Back</button>
                 <h3 id="modal-title">Recent Complaints</h3>
-                <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+                <button id="modal-close-btn" class="modal-close-btn">×</button>
             </div>
 
-            <div class="modal-filters">
-                <div class="modal-filter-group">
-                    <label for="modal-issue-filter">Filter by Issue:</label>
-                    <select id="modal-issue-filter" class="modal-filter-select">
-                        <option value="">All Issues</option>
-                        {% for value, label in issue_types_choices %}
-                        <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                    </select>
+            <div id="modal-view-list">
+                <div class="modal-filters">
+                    <div class="modal-filter-group">
+                        <label for="modal-issue-filter">Filter by Issue:</label>
+                        <select id="modal-issue-filter" class="modal-filter-select">
+                            <option value="">All Issues</option>
+                            {% for value, label in issue_types_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="modal-filter-group">
+                        <label for="modal-status-filter">Filter by Status:</label>
+                        <select id="modal-status-filter" class="modal-filter-select">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-                <div class="modal-filter-group">
-                    <label for="modal-status-filter">Filter by Status:</label>
-                    <select id="modal-status-filter" class="modal-filter-select">
-                        <option value="">All Statuses</option>
-                        {% for value, label in status_choices %}
-                        <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                    </select>
+                <div id="modal-list-body" class="modal-body">
+                    <div class="modal-loader">Loading...</div>
                 </div>
             </div>
-            <div id="modal-body-content" class="modal-body">
-                <div class="modal-loader">Loading...</div>
+
+            <div id="modal-view-detail" class="modal-body" style="display: none;">
+                <div class="modal-loader">Loading details...</div>
             </div>
         </div>
     </div>
@@ -555,9 +661,9 @@
 
         // --- Map Initialization (Unchanged) ---
         function initializeMap() {
-            var streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' });
-            var darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' });
-            var satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' });
+            var streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
+            var darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CARTO' });
+            var satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri' });
 
             map = L.map('map', {
                 center: [22.3145, 87.3093],
@@ -582,12 +688,11 @@
             L.control.layers(baseMaps, {}).addTo(map);
         }
 
-        // --- Clear Layers (Unchanged) ---
+        // --- Map Filter Logic (All Unchanged) ---
         function clearAllLayers() {
             allLayers.forEach(layer => layer.clearLayers());
         }
 
-        // --- Fetch/Populate MAP Layers (Unchanged) ---
         function fetchAndPopulateLayers(queryString = '') {
             if (!map) return;
             clearAllLayers();
@@ -633,7 +738,6 @@
                 });
         }
         
-        // --- Get MAP Filter Query String (Unchanged) ---
         function getActiveFilterQueryString() {
             const issueTypeFilters = document.querySelectorAll('#issue-type-filters .filter-btn.active');
             const statusFilters = document.querySelectorAll('#status-filters .filter-btn.active');
@@ -646,33 +750,33 @@
             return allParams.length > 0 ? '?' + allParams.join('&') : '';
         }
 
-        // --- Update MAP Filters (Unchanged) ---
         function updateMapFilters() {
             const queryString = getActiveFilterQueryString(); 
             fetchAndPopulateLayers(queryString);
         }
 
-
         /*
         =========================================
-        MODIFIED: Recent Complaints Modal Logic
+        MODAL JAVASCRIPT (Unchanged from previous)
         =========================================
         */
         const modal = document.getElementById('recent-complaints-modal');
         const openModalBtn = document.getElementById('recent-complaints-btn');
         const closeModalBtn = document.getElementById('modal-close-btn');
-        const modalBody = document.getElementById('modal-body-content');
         const modalTitle = document.getElementById('modal-title');
         
-        // --- NEW: Get references to the modal's internal filters ---
+        const modalViewList = document.getElementById('modal-view-list');
+        const modalViewDetail = document.getElementById('modal-view-detail');
+        const modalListBody = document.getElementById('modal-list-body');
+        const modalBackBtn = document.getElementById('modal-back-btn');
+        const modalFilters = document.querySelector('.modal-filters');
+
         const modalIssueFilter = document.getElementById('modal-issue-filter');
         const modalStatusFilter = document.getElementById('modal-status-filter');
 
-        // --- NEW HELPER FUNCTION: Gets query string *from the modal's filters* ---
         function getModalFilterQueryString() {
             const issueType = modalIssueFilter.value;
             const status = modalStatusFilter.value;
-            
             const params = [];
             if (issueType) {
                 params.push(`type=${encodeURIComponent(issueType)}`);
@@ -680,32 +784,23 @@
             if (status) {
                 params.push(`status=${encodeURIComponent(status)}`);
             }
-            
-            // Returns a string like "?type=garbage&status=Reported" or ""
             return params.length > 0 ? '?' + params.join('&') : '';
         }
 
-        // --- NEW FUNCTION: Fetches complaints based on modal filters ---
-        // This is the core logic, split from the 'open' event
         function fetchFilteredComplaints() {
-            modalBody.innerHTML = '<div class="modal-loader">Loading...</div>';
+            modalListBody.innerHTML = '<div class="modal-loader">Loading...</div>';
             
-            // 1. Get the query string *from the modal's dropdowns*
             const queryString = getModalFilterQueryString();
-
-            // 2. Build the API URL
             const baseUrl = "{% url 'recent_issues_api' %}";
             const url = baseUrl + queryString;
             console.log("Fetching modal data from:", url);
 
-            // 3. Update modal title based on whether filters are active
             if (queryString) {
                 modalTitle.textContent = 'Filtered Complaints';
             } else {
                 modalTitle.textContent = 'Recent Complaints';
             }
 
-            // 4. Fetch the filtered data
             fetch(url) 
                 .then(response => response.json())
                 .then(data => {
@@ -723,30 +818,104 @@
                                 <p class="complaint-desc">${item.description}</p>
                                 <div class="complaint-footer">
                                     <span>${item.reported_at}</span>
-                                    <a href="${item.detail_url}">View Details</a>
+                                    <a href="#" class="view-details-btn" data-id="${item.id}">View Details</a>
                                 </div>
                             </li>
                         `;
                     });
                     html += '</ul>';
-                    modalBody.innerHTML = html;
+                    modalListBody.innerHTML = html;
                 })
                 .catch(error => {
                     console.error('Error fetching recent complaints:', error);
                     modalBody.innerHTML = '<div class="modal-loader">Error loading complaints. Please try again.</div>';
                 });
         }
+        
+        function showComplaintDetail(issueId) {
+            modalViewList.style.display = 'none';
+            modalViewDetail.style.display = 'block';
+            modalBackBtn.style.display = 'block';
+            modalTitle.textContent = `Issue #${issueId}`;
+            modalFilters.style.display = 'none'; 
+            
+            modalViewDetail.innerHTML = '<div class="modal-loader">Loading details...</div>';
+            
+            fetch(`/api/issue-detail/${issueId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        modalViewDetail.innerHTML = `<div class="modal-loader">${data.error}</div>`;
+                        return;
+                    }
 
-        // --- MODIFIED: This function now just opens the modal and calls the fetcher ---
+                    let imagesHTML = '';
+                    if (data.images && data.images.length > 0) {
+                        imagesHTML = `
+                            <div class="detail-images-container">
+                                <h5>Attached Photos</h5>
+                                <div class="detail-images-grid">
+                                    ${data.images.map(imgUrl => `
+                                        <a href="${imgUrl}" target="_blank">
+                                            <img src="${imgUrl}" alt="Issue Photo">
+                                        </a>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        imagesHTML = `
+                            <div class="detail-images-container">
+                                <h5>Attached Photos</h5>
+                                <p style="font-size: 0.9rem; color: #555;">No photos were attached to this report.</p>
+                            </div>
+                        `;
+                    }
+
+                    const detailHTML = `
+                        <div class="detail-view-content">
+                            <h4>${data.issue_type}</h4>
+                            <p class="meta-data">
+                                Reported by <strong>${data.reported_by}</strong> on ${data.reported_at}<br>
+                                Status: <strong>${data.status}</strong><br>
+                                Location: 
+                                <a href="http://googleusercontent.com/maps/google.com/0{data.latitude},${data.longitude}" target="_blank">
+                                    ${data.latitude}, ${data.longitude} (View Map)
+                                </a>
+                            </p>
+                            <p class="description">${data.description}</p>
+                            ${imagesHTML}
+                        </div>
+                    `;
+                    
+                    modalViewDetail.innerHTML = detailHTML;
+                })
+                .catch(error => {
+                    console.error('Error fetching issue detail:', error);
+                    modalViewDetail.innerHTML = '<div class="modal-loader">Error loading details.</div>';
+                });
+        }
+        
+        function showComplaintList() {
+            modalViewList.style.display = 'block';
+            modalViewDetail.style.display = 'none';
+            modalBackBtn.style.display = 'none';
+            modalTitle.textContent = 'Recent Complaints';
+            modalFilters.style.display = 'flex'; 
+        }
+
         function openRecentComplaints() {
             modal.style.display = 'flex';
             dropdownMenu.style.display = 'none';
             
-            // When opening, reset the filters to "All" and fetch
+            modalViewList.style.display = 'block';
+            modalViewDetail.style.display = 'none';
+            modalBackBtn.style.display = 'none';
+            modalTitle.textContent = 'Recent Complaints';
+            modalFilters.style.display = 'flex'; 
+            
             modalIssueFilter.value = "";
             modalStatusFilter.value = "";
-            
-            // Call the fetcher function
             fetchFilteredComplaints();
         }
 
@@ -754,14 +923,21 @@
             modal.style.display = 'none';
         }
         
-        // --- MODIFIED: Add event listeners ---
         openModalBtn.addEventListener('click', openRecentComplaints);
         closeModalBtn.addEventListener('click', closeRecentComplaints);
-
-        // --- NEW: Add listeners to the modal's filters ---
-        // When a filter is changed, re-fetch the list
+        
+        modalBackBtn.addEventListener('click', showComplaintList);
         modalIssueFilter.addEventListener('change', fetchFilteredComplaints);
         modalStatusFilter.addEventListener('change', fetchFilteredComplaints);
+
+        modalListBody.addEventListener('click', function(e) {
+            const target = e.target.closest('.view-details-btn');
+            if (target) {
+                e.preventDefault(); 
+                const id = target.dataset.id;
+                showComplaintDetail(id);
+            }
+        });
 
 
         // --- Run on Page Load (Unchanged) ---

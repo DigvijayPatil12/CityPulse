@@ -44,7 +44,11 @@ urlpatterns = [
     # 9. Recent Issues API
     path('api/recent-issues/', views.recent_issues_api, name='recent_issues_api'),
 
-    # 10. Issue Detail Page
+    # --- NEW API ENDPOINT ---
+    # 10. API for a single issue's details
+    path('api/issue-detail/<int:issue_id>/', views.api_issue_detail, name='api_issue_detail'),
+
+    # 11. Issue Detail Page
     path('issue/<int:pk>/', views.issue_detail_view, name='issue_detail'),
 
 ]

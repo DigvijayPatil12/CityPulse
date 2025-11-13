@@ -47,8 +47,7 @@ class LoginView(LoginView):
             return redirect('home')
 
 # ----------------------------------------------------------------------
-# 2. *** MODIFIED VIEW: home_page ***
-# We now pass the filter choices to the template for the modal
+# 2. HOME PAGE VIEW (MODIFIED)
 # ----------------------------------------------------------------------
 @login_required 
 def home_page(request):
@@ -273,21 +272,16 @@ def update_issue_status(request, issue_id):
 
 
 # ----------------------------------------------------------------------
-# 6. API VIEW (UNCHANGED from last time)
+# 6. API VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 def issue_data_api(request):
     try:
-        # Start with all issues
         issues = IssueReport.objects.all()
-
-        # Get lists of filters from query params
         status_filters = request.GET.getlist('status')
         type_filters = request.GET.getlist('type')
 
-        # Apply filters if they are provided in the URL
         if status_filters:
             issues = issues.filter(status__in=status_filters)
-        
         if type_filters:
             issues = issues.filter(issue_type__in=type_filters)
 
@@ -312,49 +306,34 @@ def issue_data_api(request):
 
 
 # ----------------------------------------------------------------------
-# 7. *** MODIFIED VIEW: recent_issues_api ***
-# This view now accepts single, independent filters from the modal
+# 7. RECENT ISSUES API (*** SYNTAX FIX ***)
 # ----------------------------------------------------------------------
 @login_required
 def recent_issues_api(request):
-    try:
-        # Start with all issues, including reporter data
+    try: # <--- ADDED THE MISSING COLON HERE
         issues = IssueReport.objects.select_related('reporter').all()
 
-        # --- MODIFICATION ---
-        # Get single filter values. Use .get() for dropdowns.
-        status_filter = request.GET.get('status', '') # Get 'status', default to empty string
-        type_filter = request.GET.get('type', '')     # Get 'type', default to empty string
+        status_filter = request.GET.get('status', '') 
+        type_filter = request.GET.get('type', '')     
 
-        # Apply filters *only if* they are provided and not empty
         if status_filter:
             issues = issues.filter(status=status_filter)
-        
         if type_filter:
             issues = issues.filter(issue_type=type_filter)
-        # --- END MODIFICATION ---
 
-        # Apply sorting and limit *after* filtering
-        # Increased limit to 25 to provide a better scrollable list
         filtered_recent_issues = issues.order_by('-reported_at')[:25] 
 
         data_list = []
         for issue in filtered_recent_issues: 
-            detail_url = '#' 
-            try:
-                detail_url = reverse('issue_detail', args=[issue.id])
-            except:
-                pass 
-
+            # We MUST include the id for the detail view to work
             data_list.append({
-                'id': issue.id,
+                'id': issue.id, # <-- This is crucial
                 'reporter_username': issue.reporter.username,
                 'issue_type': issue.get_issue_type_display(), 
-                'latitude': float(issue.latitude),
-                'longitude': float(issue.longitude),
                 'description': issue.description,
                 'reported_at': issue.reported_at.strftime('%b %d, %Y, %I:%M %p'),
-                'detail_url': detail_url
+                # detail_url is no longer needed, but doesn't hurt to keep
+                'detail_url': reverse('issue_detail', args=[issue.id]) 
             })
         
         return JsonResponse(data_list, safe=False)
@@ -364,7 +343,39 @@ def recent_issues_api(request):
         return JsonResponse({'error': 'Failed to load recent issues.'}, status=500)
 
 # ----------------------------------------------------------------------
-# 8. ISSUE DETAIL VIEW (UNCHANGED)
+# 8. NEW API VIEW
+# ----------------------------------------------------------------------
+@login_required
+def api_issue_detail(request, issue_id):
+    try:
+        # Pre-fetch related data for efficiency
+        issue = get_object_or_404(IssueReport.objects.select_related('reporter'), id=issue_id)
+        
+        # Get a list of all image URLs for this issue
+        images = [img.image.url for img in issue.images.all()]
+
+        # Prepare the data
+        data = {
+            'id': issue.id,
+            'issue_type': issue.get_issue_type_display(),
+            'description': issue.description,
+            'status': issue.get_status_display(),
+            'reported_by': issue.reporter.get_full_name() or issue.reporter.username,
+            'reported_at': issue.reported_at.strftime('%b %d, %Y, %I:%M %p'),
+            'latitude': float(issue.latitude),
+            'longitude': float(issue.longitude),
+            'images': images, # This is the new, important part
+        }
+        
+        return JsonResponse(data)
+
+    except Exception as e:
+        logger.error(f"Error fetching API issue detail for {issue_id}: {e}", exc_info=True)
+        return JsonResponse({'error': 'Failed to load issue details.'}, status=500)
+
+
+# ----------------------------------------------------------------------
+# 9. ISSUE DETAIL VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 @login_required
 def issue_detail_view(request, pk):
