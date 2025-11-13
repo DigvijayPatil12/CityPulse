@@ -1,43 +1,64 @@
-{% extends "core/base.html" %} 
-{% load static %}
-
-{% block title %}All Reported Issues (Admin Dashboard){% endblock %}
-
-{% block extra_head %}
+{% extends "core/base.html" %} {% load static %} {% block title %}All Reported Issues (Admin Dashboard){% endblock %} {% block extra_head %}
 <style>
     /* ---------------------------------------------------------------------- */
     /* 1. STATUS COLUMN STYLING (MODIFIED FOR SINGLE DROPDOWN & COLOR) */
     /* ---------------------------------------------------------------------- */
+    
     .status-cell {
         min-width: 170px;
         white-space: nowrap;
     }
     
     .status-select {
-        font-weight: 600; 
-        border: none !important; /* Force removal of border */
-        padding: 0 !important; /* Force removal of padding */
-        background-color: transparent !important; /* Force transparent background */
-        box-shadow: none !important; /* Force removal of box-shadow */
+        font-weight: 600;
+        border: none !important;
+        /* Force removal of border */
+        padding: 0 !important;
+        /* Force removal of padding */
+        background-color: transparent !important;
+        /* Force transparent background */
+        box-shadow: none !important;
+        /* Force removal of box-shadow */
         min-width: 120px;
-        cursor: pointer; 
+        cursor: pointer;
         /* The arrow color might still be OS-dependent, but the text will be colored */
     }
-
     /* Color-Coding the currently selected status in the dropdown (Needs !important) */
-    .status-select.resolved { color: #28a745 !important; } /* Green */
-    .status-select.in-progress { color: #17a2b8 !important; } /* Blue/Cyan */
-    .status-select.reported { color: #dc3545 !important; } /* Red */
     
+    .status-select.resolved {
+        color: #28a745 !important;
+    }
+    /* Green */
+    
+    .status-select.in-progress {
+        color: #17a2b8 !important;
+    }
+    /* Blue/Cyan */
+    
+    .status-select.reported {
+        color: #dc3545 !important;
+    }
+    /* Red */
     /* Style for the options within the dropdown (Optional but helpful) */
-    .option-resolved { color: #28a745; font-weight: 600; }
-    .option-in-progress { color: #17a2b8; font-weight: 600; }
-    .option-reported { color: #dc3545; font-weight: 600; }
-
-
+    
+    .option-resolved {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .option-in-progress {
+        color: #17a2b8;
+        font-weight: 600;
+    }
+    
+    .option-reported {
+        color: #dc3545;
+        font-weight: 600;
+    }
     /* ---------------------------------------------------------------------- */
     /* 2. INTENSITY COLUMN STYLING (UNCHANGED) */
     /* ---------------------------------------------------------------------- */
+    
     .intensity-badge {
         font-size: 0.85rem;
         font-weight: 700;
@@ -48,46 +69,63 @@
         text-align: center;
     }
     /* Simple color coding for Intensity (0.0 to 1.0) - UNCHANGED */
-    .intensity-10 { background-color: #f5c6cb; color: #721c24; } 
-    .intensity-07 { background-color: #ffeeba; color: #856404; } 
-    .intensity-05 { background-color: #e2e3e5; color: #383d41; } 
-    .intensity-03 { background-color: #cce5ff; color: #004085; } 
-    .intensity-00 { background-color: #d4edda; color: #155724; } 
-
+    
+    .intensity-10 {
+        background-color: #f5c6cb;
+        color: #721c24;
+    }
+    
+    .intensity-07 {
+        background-color: #ffeeba;
+        color: #856404;
+    }
+    
+    .intensity-05 {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .intensity-03 {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .intensity-00 {
+        background-color: #d4edda;
+        color: #155724;
+    }
     /* ---------------------------------------------------------------------- */
     /* 3. GENERAL TABLE & LINK STYLING (UNCHANGED) */
     /* ---------------------------------------------------------------------- */
+    
     .table thead th {
-        background-color: #343a40; 
+        background-color: #343a40;
         color: white;
         border-bottom: 3px solid #007bff;
         font-weight: 500;
         vertical-align: middle;
     }
+    
     .location-link {
         font-size: 0.9em;
         font-weight: 500;
     }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">All Reported Issues</h1>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+
+    {% if messages %} {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %} {% endif %}
 
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <h5 class="card-title">Filter and Sort Issues</h5>
             <form method="GET" action="{% url 'all_issues_list' %}" class="row g-3 align-items-end">
-                
+
                 <div class="col-md-4">
                     <label for="category_filter" class="form-label">Issue Category</label>
                     <select class="form-select" id="category_filter" name="issue_type">
@@ -111,7 +149,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="col-md-3">
                     <label for="sort_filter" class="form-label">Sort By: Recent / Intensity (High-Low)</label>
                     <select class="form-select" id="sort_filter" name="sort">
@@ -140,7 +178,7 @@
                     <th>Date</th>
                     <th>Description</th>
                     <th>Images</th>
-                    <th>Intensity</th> 
+                    <th>Intensity</th>
                 </tr>
             </thead>
             <tbody>
@@ -149,18 +187,16 @@
                     <td><a href="{% url 'issue_detail' pk=issue.id %}" class="text-primary fw-bold">#{{ issue.id }}</a></td>
                     <td>{{ issue.get_issue_type_display }}</td>
                     <td>
-                        <a href="http://googleusercontent.com/maps.google.com/4{{ issue.latitude }},{{ issue.longitude }}" target="_blank" title="View on map" class="location-link">
-                            View Map
-                        </a>
+                        <a href="https://www.google.com/maps?q={{ issue.latitude }},{{ issue.longitude }}" target="_blank" title="View on map" class="location-link">
+    View Map
+</a>
                     </td>
-                    
+
                     <td class="status-cell">
                         {# Combined Status Dropdown: Apply color class to the select element itself #}
                         <form action="{% url 'update_issue_status' issue.id %}" method="POST" class="status-update-form">
-                            {% csrf_token %}
-                            {# Get the lowercase, hyphenated status for the CSS class #}
-                            {% with status_class=issue.status|lower|cut:' ' %}
-                                <select name="status" class="form-select form-select-sm status-select {{ status_class }}" onchange="this.form.submit()">
+                            {% csrf_token %} {# Get the lowercase, hyphenated status for the CSS class #} {% with status_class=issue.status|lower|cut:' ' %}
+                            <select name="status" class="form-select form-select-sm status-select {{ status_class }}" onchange="this.form.submit()">
                                     {% for status_value, status_label in status_choices %}
                                         {# Apply option styling for better visibility on hover/focus #}
                                         {% with option_class='option-'|add:status_value|lower|cut:' ' %}
@@ -171,31 +207,24 @@
                                             </option>
                                         {% endwith %}
                                     {% endfor %}
-                                </select>
-                            {% endwith %}
+                                </select> {% endwith %}
                         </form>
                     </td>
 
                     <td>{{ issue.reporter.username|default:"Anonymous" }}</td>
                     <td><span class="small text-muted">{{ issue.reported_at|date:"M d, Y H:i" }}</span></td>
                     <td>{{ issue.description|truncatechars:50 }}</td>
-                    
+
                     <td>
                         {% for image in issue.images.all %}
-                            <a href="{{ image.image.url }}" target="_blank">View Photo {{ forloop.counter }}</a>
-                            {% if not forloop.last %}<br>{% endif %}
-                        {% empty %}
-                            No Images
-                        {% endfor %}
+                        <a href="{{ image.image.url }}" target="_blank">View Photo {{ forloop.counter }}</a> {% if not forloop.last %}<br>{% endif %} {% empty %} No Images {% endfor %}
                     </td>
-                    
+
                     <td>
-                        {# Intensity badge with color coding #}
-                        {% with class_suffix=issue.intensity|stringformat:"s"|slice:":-1"|default:"00"|cut:"." %}
-                            <span class="intensity-badge intensity-{{ class_suffix|default:'05' }}">
+                        {# Intensity badge with color coding #} {% with class_suffix=issue.intensity|stringformat:"s"|slice:":-1"|default:"00"|cut:"." %}
+                        <span class="intensity-badge intensity-{{ class_suffix|default:'05' }}">
                                 {{ issue.intensity }}
-                            </span>
-                        {% endwith %}
+                            </span> {% endwith %}
                     </td>
                 </tr>
                 {% endfor %}

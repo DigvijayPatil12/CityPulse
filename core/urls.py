@@ -32,6 +32,9 @@ urlpatterns = [
     # 7c. NEW: User Delete Issue URL
     path('profile/issue/<int:issue_id>/delete/', views.user_delete_issue, name='user_delete_issue'),
     
+    # 7d. <<< NEW URL FOR RECENT COMPLAINTS >>>
+    path('complaints/', views.recent_complaints_list, name='recent_complaints_list'),
+    
     # 8. ALL ISSUES LIST PAGE (Staff Only)
     path('admin/issues/', views.all_issues_list, name='all_issues_list'),
     
@@ -40,13 +43,11 @@ urlpatterns = [
 
     # --- API Endpoints ---
     path('api/issue-data/', views.issue_data_api, name='issue_data_api'),
-    
-    # 9. Recent Issues API
-    path('api/recent-issues/', views.recent_issues_api, name='recent_issues_api'),
-
+  
     # --- NEW API ENDPOINT ---
     # 10. API for a single issue's details
     path('api/issue-detail/<int:issue_id>/', views.api_issue_detail, name='api_issue_detail'),
+
 
     # 11. Issue Detail Page
     path('issue/<int:pk>/', views.issue_detail_view, name='issue_detail'),

@@ -47,7 +47,7 @@ class LoginView(LoginView):
             return redirect('home')
 
 # ----------------------------------------------------------------------
-# 2. HOME PAGE VIEW (MODIFIED)
+# 2. HOME PAGE VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 @login_required 
 def home_page(request):
@@ -57,6 +57,7 @@ def home_page(request):
         'status_choices': STATUS_CHOICES, # Pass status choices
     }
     return render(request, 'core/home.html', context)
+
 
 
 # ----------------------------------------------------------------------
@@ -178,6 +179,42 @@ def user_profile(request):
     }
     return render(request, 'core/profile.html', context)
 
+# ======================================================================
+# 6. RECENT COMPLAINTS LIST (MODIFIED)
+# ======================================================================
+@login_required
+def recent_complaints_list(request):
+    """
+    Shows a list of all recent issues reported by all users, with filtering.
+    """
+    # Get filter parameters from the URL
+    status_filter = request.GET.get('status')
+    type_filter = request.GET.get('issue_type')
+
+    # Start with the base queryset
+    all_issues = IssueReport.objects.select_related('reporter').all()
+
+    # Apply filters if they exist and are not empty
+    if status_filter:
+        all_issues = all_issues.filter(status=status_filter)
+    
+    if type_filter:
+        all_issues = all_issues.filter(issue_type=type_filter)
+
+    # Order by newest first
+    all_issues = all_issues.order_by('-reported_at')
+
+    context = {
+        'issues': all_issues,
+        'user': request.user,
+        'STATUS_CHOICES': STATUS_CHOICES,  # Pass choices for the dropdown
+        'ISSUE_TYPES': ISSUE_TYPES,      # Pass choices for the dropdown
+        'selected_status': status_filter,  # Pass back the selected value
+        'selected_type': type_filter,      # Pass back the selected value
+    }
+    return render(request, 'core/recent_complaints.html', context)
+# ======================================================================
+
 
 @require_POST
 @login_required
@@ -272,7 +309,7 @@ def update_issue_status(request, issue_id):
 
 
 # ----------------------------------------------------------------------
-# 6. API VIEW (UNCHANGED)
+# 7. API VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 def issue_data_api(request):
     try:
@@ -305,45 +342,9 @@ def issue_data_api(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-# ----------------------------------------------------------------------
-# 7. RECENT ISSUES API (*** SYNTAX FIX ***)
-# ----------------------------------------------------------------------
-@login_required
-def recent_issues_api(request):
-    try: # <--- ADDED THE MISSING COLON HERE
-        issues = IssueReport.objects.select_related('reporter').all()
-
-        status_filter = request.GET.get('status', '') 
-        type_filter = request.GET.get('type', '')     
-
-        if status_filter:
-            issues = issues.filter(status=status_filter)
-        if type_filter:
-            issues = issues.filter(issue_type=type_filter)
-
-        filtered_recent_issues = issues.order_by('-reported_at')[:25] 
-
-        data_list = []
-        for issue in filtered_recent_issues: 
-            # We MUST include the id for the detail view to work
-            data_list.append({
-                'id': issue.id, # <-- This is crucial
-                'reporter_username': issue.reporter.username,
-                'issue_type': issue.get_issue_type_display(), 
-                'description': issue.description,
-                'reported_at': issue.reported_at.strftime('%b %d, %Y, %I:%M %p'),
-                # detail_url is no longer needed, but doesn't hurt to keep
-                'detail_url': reverse('issue_detail', args=[issue.id]) 
-            })
-        
-        return JsonResponse(data_list, safe=False)
-
-    except Exception as e:
-        logger.error(f"Error fetching recent issues: {e}", exc_info=True)
-        return JsonResponse({'error': 'Failed to load recent issues.'}, status=500)
 
 # ----------------------------------------------------------------------
-# 8. NEW API VIEW
+# 8. API VIEW (UNCHANGED)
 # ----------------------------------------------------------------------
 @login_required
 def api_issue_detail(request, issue_id):
@@ -364,7 +365,7 @@ def api_issue_detail(request, issue_id):
             'reported_at': issue.reported_at.strftime('%b %d, %Y, %I:%M %p'),
             'latitude': float(issue.latitude),
             'longitude': float(issue.longitude),
-            'images': images, # This is the new, important part
+            'images': images,
         }
         
         return JsonResponse(data)
@@ -375,10 +376,13 @@ def api_issue_detail(request, issue_id):
 
 
 # ----------------------------------------------------------------------
-# 9. ISSUE DETAIL VIEW (UNCHANGED)
+# 9. ISSUE DETAIL VIEW (MODIFIED FOR BETTER DEBUGGING)
 # ----------------------------------------------------------------------
 @login_required
 def issue_detail_view(request, pk):
+    # This is the view that was causing the redirect.
+    # I've made the 'except' block more specific so you can
+    # debug the real error in your logs if you want to.
     try:
         issue = get_object_or_404(IssueReport, pk=pk)
         images = issue.images.all()
@@ -391,9 +395,18 @@ def issue_detail_view(request, pk):
         }
         
         return render(request, 'core/issue_detail.html', context)
-        
-    except Exception as e:
-        messages.error(request, f"Error loading issue: {e}")
-        return redirect('home')
     
-    return render(request, 'core/issue_detail.html', context)
+    # get_object_or_404 raises Http404, not DoesNotExist
+    except Http404:
+        messages.error(request, "The issue you are looking for does not exist.")
+        return redirect('home')
+    # This error happens if 'core/issue_detail.html' is missing
+    except TemplateDoesNotExist:
+        logger.error(f"Template 'core/issue_detail.html' not found.", exc_info=True)
+        messages.error(request, "There was a problem loading the page. The template is missing.")
+        return redirect('home')
+    # This catches other errors (e.g., template syntax error)
+    except Exception as e:
+        logger.error(f"Error loading issue detail {pk}: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while loading the issue.")
+        return redirect('home')

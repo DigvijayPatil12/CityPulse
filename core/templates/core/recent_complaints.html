@@ -1,0 +1,445 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Recent Complaints - CityPulse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+         :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --header-height: 65px;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-primary: #212529;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+        }
+        /* --- App Header (Unchanged) --- */
+        
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            height: var(--header-height);
+            background-color: var(--card-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .brand-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(45deg, #007bff, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .brand-title .material-icons {
+            font-size: 2rem;
+        }
+        
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 9px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .user-menu {
+            position: relative;
+        }
+        
+        #user-menu-button {
+            background: #e1e3e8;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 55px;
+            right: 0;
+            background-color: white;
+            min-width: 180px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .dropdown-content a,
+        .dropdown-content button {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        
+        .dropdown-content a:hover,
+        .dropdown-content button:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .dropdown-content form {
+            margin: 0;
+        }
+        
+        .dropdown-content .logout-btn {
+            color: #e3342f;
+            font-weight: 600;
+        }
+        /* --- Page Content Styles (Unchanged) --- */
+        
+        .page-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .btn-back {
+            background-color: #6c757d;
+            color: white;
+        }
+        /* --- Filter Styles (Unchanged) --- */
+        
+        .filters-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 15px;
+            background-color: var(--card-background);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .filter-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            background-color: #f9f9f9;
+        }
+        
+        .filter-actions {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            flex-basis: 100%;
+            justify-content: flex-start;
+        }
+        
+        .btn-filter {
+            background-color: var(--primary-color);
+            color: white;
+            height: 38px;
+        }
+        
+        .btn-clear {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #6c757d;
+            color: white;
+            height: 38px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0 16px;
+            border-radius: 8px;
+        }
+        
+        @media (min-width: 768px) {
+            .filter-actions {
+                flex-basis: auto;
+                justify-content: flex-start;
+            }
+        }
+        /* --- Complaint List Styles (Unchanged) --- */
+        
+        .complaint-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .complaint-item {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .complaint-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .complaint-type {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--primary-color);
+        }
+        
+        .complaint-user {
+            font-size: 0.85rem;
+            color: #555;
+        }
+        
+        .complaint-desc {
+            font-size: 0.95rem;
+            color: #333;
+            margin-bottom: 10px;
+            /* Description is no longer truncated */
+            line-height: 1.6;
+        }
+        /* === NEW IMAGE STYLE === */
+        
+        .complaint-image-container {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .complaint-image-container img {
+            width: 100%;
+            max-height: 450px;
+            /* You can adjust this height */
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .complaint-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #777;
+        }
+        
+        .complaint-footer a {
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--primary-hover);
+        }
+        
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .status-Reported {
+            background-color: #dc3545;
+        }
+        
+        .status-In_Progress {
+            background-color: #17a2b8;
+        }
+        
+        .status-Resolved {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="app-header">
+        <a href="{% url 'home' %}" style="text-decoration: none;">
+            <h1 class="brand-title">
+                <span class="material-icons">signal_cellular_alt</span> CityPulse
+            </h1>
+        </a>
+        <nav class="nav-actions">
+            <div class="user-menu">
+                <button id="user-menu-button" aria-haspopup="true" aria-expanded="false">
+                    <span class="material-icons">person</span>
+                </button>
+                <div id="dropdown-menu" class="dropdown-content">
+                    <a href="{% url 'profile' %}">View Profile</a>
+                    <a href="{% url 'recent_complaints_list' %}">Recent Complaints</a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-btn">Log Out</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-container">
+        <div class="page-header">
+            <h1>Recent Community Complaints</h1>
+            <a href="{% url 'home' %}" class="btn btn-back">Back to Map</a>
+        </div>
+
+        <form method="GET" class="filters-container">
+            <div class="filter-group">
+                <label for="status-filter">Filter by Status</label>
+                <select id="status-filter" name="status" class="filter-select">
+                    <option value="">All Statuses</option>
+                    {% for value, display in STATUS_CHOICES %}
+                    <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>
+                        {{ display }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="type-filter">Filter by Type</label>
+                <select id="type-filter" name="issue_type" class="filter-select">
+                    <option value="">All Types</option>
+                    {% for value, display in ISSUE_TYPES %}
+                    <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>
+                        {{ display }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-filter">Filter</button>
+                <a href="{% url 'recent_complaints_list' %}" class="btn-clear">Clear</a>
+            </div>
+        </form>
+
+        <ul class="complaint-list">
+            {% for issue in issues %}
+            <li class="complaint-item">
+                <div class="complaint-item-header">
+                    <span class="complaint-type">{{ issue.get_issue_type_display }}</span>
+                    <span class="complaint-user">
+                        By: <strong>{{ issue.reporter.username|default:'Deleted User' }}</strong>
+                    </span>
+                </div>
+                <p class="complaint-desc">{{ issue.description }}</p>
+
+                {% if issue.images.all.first %}
+                <div class="complaint-image-container">
+                    <img src="{{ issue.images.all.first.image.url }}" alt="Image for {{ issue.get_issue_type_display }}">
+                </div>
+                {% endif %}
+                <div class="complaint-footer">
+                    <span>
+                        Reported: {{ issue.reported_at|date:"M d, Y, P" }}
+                    </span>
+                    <span class="status-badge status-{{ issue.status|slugify }}">{{ issue.get_status_display }}</span>
+                </div>
+            </li>
+            {% empty %}
+            <li class="complaint-item">
+                {% if selected_status or selected_type %}
+                <p>No issues match your current filters. <a href="{% url 'recent_complaints_list' %}">Clear filters</a> to see all issues.</p>
+                {% else %}
+                <p>No issues have been reported yet.</p>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </main>
+
+    <script>
+        // --- Dropdown Menu Logic (Unchanged) ---
+        const menuButton = document.getElementById('user-menu-button');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        menuButton.addEventListener('click', (event) => {
+            const isVisible = dropdownMenu.style.display === 'block';
+            dropdownMenu.style.display = isVisible ? 'none' : 'block';
+            event.stopPropagation();
+        });
+        document.addEventListener('click', () => {
+            dropdownMenu.style.display = 'none';
+        });
+    </script>
+
+</body>
+
+</html>

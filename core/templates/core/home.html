@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>CityPulse Heatmap</title>
@@ -11,485 +12,636 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-   <style>
-    :root {
-        --primary-color: #007bff;
-        --primary-hover: #0056b3;
-        --header-height: 65px;
-        --background-color: #f4f7f6;
-        --card-background: #ffffff;
-        --text-primary: #212529; 
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-        font-family: 'Poppins', sans-serif;
-        background-color: var(--background-color);
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-    }
-    /* --- App Header (Unchanged) --- */
-    .app-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 20px;
-        height: var(--header-height);
-        background-color: var(--card-background);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        flex-shrink: 0;
-        position: relative;
-        z-index: 1000;
-    }
-    .brand-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        letter-spacing: -0.5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: linear-gradient(45deg, #007bff, #00c6ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    .brand-title .material-icons { font-size: 2rem; }
-    .nav-actions { display: flex; align-items: center; gap: 15px; }
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 9px 16px;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        text-decoration: none;
-        cursor: pointer;
-        transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    .btn-primary { background-color: var(--primary-color); color: white; }
-    .btn:hover { transform: translateY(-2px); }
-    .user-menu { position: relative; }
-    #user-menu-button {
-        background: #e1e3e8;
-        border: none;
-        border-radius: 50%;
-        width: 42px;
-        height: 42px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s;
-    }
-    #user-menu-button:hover { background-color: #d1d3d8; }
-    .dropdown-content {
-        display: none;
-        position: absolute;
-        top: 55px;
-        right: 0;
-        background-color: white;
-        min-width: 180px;
-        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .dropdown-content a,
-    .dropdown-content button {
-        color: black;
-        padding: 12px 16px;
-        text-decoration: none;
-        display: block;
-        width: 100%;
-        text-align: left;
-        background: none;
-        border: none;
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-    .dropdown-content a:hover,
-    .dropdown-content button:hover { background-color: #f1f1f1; }
-    .dropdown-content form { margin: 0; }
-    .dropdown-content .logout-btn { color: #e3342f; font-weight: 600; }
-    
-    /* --- Map & FAB (Unchanged) --- */
-    #map-container { flex-grow: 1; position: relative; }
-    #map { width: 100%; height: 100%; }
-    .fab {
-        display: none;
-        position: absolute;
-        bottom: 25px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
-        background-color: var(--primary-color);
-        color: white;
-        border-radius: 50%;
-        border: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        align-items: center;
-        justify-content: center;
-        z-index: 999;
-        text-decoration: none;
-    }
-    .fab .material-icons { font-size: 28px; }
 
-    /* --- Modal Styles (Mostly Unchanged) --- */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: var(--background-color);
-        z-index: 1999;
-    }
-    .modal-content {
-        background-color: transparent;
-        border-radius: 0;
-        box-shadow: none;
-        width: 100%;
-        max-width: 100%;
-        height: 100%;
-        max-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 20px;
-        border-bottom: 1px solid #e0e0e0;
-        position: sticky; /* Sticky header is fine */
-        top: 0;
-        background-color: var(--card-background);
-        z-index: 10;
-        flex-shrink: 0; /* Make header not shrink */
-    }
-    .modal-header h3 { 
-        font-size: 1.25rem; 
-        font-weight: 600;
-        margin: 0;
-        flex-grow: 1; 
-        text-align: center; 
-    }
-    .modal-close-btn {
-        background: none;
-        border: none;
-        font-size: 1.8rem;
-        cursor: pointer;
-        color: #888;
-        padding: 0;
-        line-height: 1;
-        min-width: 50px; 
-        text-align: right;
-    }
-    .modal-close-btn:hover { color: #333; }
-    .modal-body {
-        overflow-y: auto; /* This is the main scroller */
-        flex-grow: 1;
-        width: 100%;
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    /* Separate padding for list body */
-    #modal-list-body {
-        padding: 8px 20px 20px 20px;
-    }
-    .complaint-list { list-style: none; padding: 0; margin: 0; }
-    .complaint-item {
-        background-color: var(--card-background);
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
-        border: 1px solid #e0e0e0;
-    }
-    .complaint-item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-    }
-    .complaint-type { font-weight: 600; font-size: 1.05rem; color: var(--primary-color); }
-    .complaint-user { font-size: 0.85rem; color: #555; }
-    .complaint-desc { font-size: 0.95rem; color: #333; margin-bottom: 10px; }
-    .complaint-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8rem;
-        color: #777;
-    }
-    .complaint-footer a { font-weight: 600; text-decoration: none; color: var(--primary-hover); }
-    .modal-loader { text-align: center; padding: 40px; font-size: 1rem; color: #555; }
-    
-    /* --- Map Filter Panel (Unchanged) --- */
-    .filter-panel {
-        display: block; 
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 200px;
-        background-color: var(--card-background);
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        z-index: 999;
-        overflow-x: hidden;
-        overflow-y: auto;
-        max-height: calc(100vh - 85px); 
-    }
-    .filter-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 15px;
-        border-bottom: 1px solid #eee;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #333;
-        position: sticky;
-        top: 0;
-        background-color: var(--card-background);
-        z-index: 2;
-    }
-    .filter-body {
-        display: flex;
-        flex-direction: column;
-        padding: 8px;
-    }
-    .filter-btn {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        padding: 10px 12px;
-        border: none;
-        background-color: transparent;
-        border-radius: 6px;
-        cursor: pointer;
-        text-align: left;
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #444;
-        transition: background-color 0.2s ease;
-    }
-    .filter-btn .material-icons {
-        font-size: 1.25rem;
-    }
-    .filter-btn:hover {
-        background-color: #f5f5f5;
-    }
-    .filter-btn.active {
-        background-color: #e8f3ff;
-        color: var(--primary-hover);
-        font-weight: 600;
-    }
-    .filter-toggle-btn {
-        display: none; 
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 48px;
-        height: 48px;
-        background-color: var(--card-background);
-        border: none;
-        border-radius: 50%;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        z-index: 1000; 
-        cursor: pointer;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary-color);
-    }
-    .filter-toggle-btn .material-icons {
-        font-size: 24px;
-    }
-    
-    /* --- Modal List Filters (Unchanged) --- */
-    .modal-filters {
-        display: flex;
-        gap: 15px;
-        padding: 10px 20px;
-        background-color: var(--card-background);
-        border-bottom: 1px solid #e0e0e0;
-        z-index: 9;
-        flex-shrink: 0; /* This is correct */
-    }
-    
-    .modal-filter-group {
-        flex: 1;
-    }
-    .modal-filter-group label {
-        display: block;
-        font-size: 0.8rem;
-        font-weight: 600;
-        margin-bottom: 4px;
-        color: var(--text-primary);
-    }
-    .modal-filter-select {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.9rem;
-        background-color: #f9f9f9;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 16px;
-    }
-    
-    /* --- Back Button & Detail View (Unchanged) --- */
-    #modal-back-btn {
-        background: none;
-        border: none;
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--primary-color);
-        cursor: pointer;
-        padding: 0;
-        display: none; /* Hidden by default */
-        min-width: 50px; /* Match close button */
-        text-align: left;
-    }
-    .detail-view-content { padding: 0; }
-    .detail-view-content h4 { 
-        font-size: 1.5rem; 
-        font-weight: 600;
-        margin: 0 0 5px; 
-        color: var(--primary-color);
-    }
-    .detail-view-content p { 
-        font-size: 1rem; 
-        margin: 4px 0 12px; 
-        line-height: 1.6;
-    }
-    .detail-view-content .meta-data { 
-        font-size: 0.9rem; 
-        color: #555; 
-        border-bottom: 1px solid #eee; 
-        padding-bottom: 10px;
-    }
-    .detail-view-content .meta-data strong { color: var(--text-primary); }
-    .detail-view-content .description { margin-top: 15px; }
-
-    .detail-images-container {
-        margin-top: 20px;
-    }
-    .detail-images-container h5 { 
-        font-size: 1.1rem; 
-        font-weight: 600; 
-        border-bottom: 1px solid #eee;
-        padding-bottom: 8px;
-    }
-    .detail-images-grid {
-        display: flex; 
-        flex-wrap: wrap; 
-        gap: 10px; 
-        margin-top: 15px;
-    }
-    .detail-images-grid a {
-        display: block;
-    }
-    .detail-images-grid img {
-        width: 120px; 
-        height: 120px;
-        object-fit: cover; 
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        transition: transform 0.2s;
-    }
-    .detail-images-grid img:hover {
-        transform: scale(1.05);
-    }
-    
-    /* =========================================
-    *** THE FIX ***
-    This is the CSS that was breaking the scroll.
-    I have removed 'overflow: hidden'.
-    ========================================= */
-    #modal-view-list {
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1; /* Make this view grow */
-        /* overflow: hidden; <-- THIS WAS THE BUG. It has been removed. */
-        min-height: 0; /* Added for flexbox stability */
-    }
-    /* =========================================
-    This rule is also essential.
-    It tells the list body to grow and scroll.
-    ========================================= */
-    #modal-list-body {
-        flex-grow: 1; /* Make this body grow */
-        overflow-y: auto; /* Make THIS body scroll */
-    }
-    /* =========================================
-    END OF FIX
-    ========================================= */
-
-    @media (max-width: 768px) {
-        .app-header .btn-primary { display: none; }
-        .fab { display: flex; }
-        .app-header { padding: 0 12px; height: 50px; }
-        .brand-title { font-size: 1.4rem; gap: 5px; }
-        .brand-title .material-icons { font-size: 1.6rem; }
-        #user-menu-button { width: 38px; height: 38px; }
-        .modal-header { padding: 12px 15px; height: auto; min-height: 50px; } 
-        .modal-body { padding: 15px; }
-        #modal-list-body { padding: 8px 15px 15px 15px; }
-
-        .filter-toggle-btn {
-            display: flex; 
-        }
-
-        .filter-panel {
-            display: none; 
-            width: 180px;
-            top: 65px; 
-            right: 10px;
-            z-index: 1001; 
-            max-height: calc(100vh - 130px); 
+    <style>
+         :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --header-height: 65px;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-primary: #212529;
         }
         
-        .filter-panel.show-on-mobile {
-            display: block; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        .leaflet-control-layers {
-            margin-top: 65px !important;
-        }
-
-        /* --- Mobile styles for modal filters --- */
-        .modal-filters {
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            display: flex;
             flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* --- App Header (Unchanged) --- */
+        
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            height: var(--header-height);
+            background-color: var(--card-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .brand-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(45deg, #007bff, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .brand-title .material-icons {
+            font-size: 2rem;
+        }
+        
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .user-menu {
+            position: relative;
+        }
+        
+        #user-menu-button {
+            background: #e1e3e8;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        #user-menu-button:hover {
+            background-color: #d1d3d8;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 55px;
+            right: 0;
+            background-color: white;
+            min-width: 180px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .dropdown-content a,
+        .dropdown-content button {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        
+        .dropdown-content a:hover,
+        .dropdown-content button:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .dropdown-content form {
+            margin: 0;
+        }
+        
+        .dropdown-content .logout-btn {
+            color: #e3342f;
+            font-weight: 600;
+        }
+        /* --- Map & FAB (Unchanged) --- */
+        
+        #map-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .fab {
+            display: none;
+            position: absolute;
+            bottom: 25px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            text-decoration: none;
+        }
+        
+        .fab .material-icons {
+            font-size: 28px;
+        }
+        /* --- Modal Styles (Mostly Unchanged) --- */
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--background-color);
+            z-index: 1999;
+        }
+        
+        .modal-content {
+            background-color: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            /* Sticky header is fine */
+            top: 0;
+            background-color: var(--card-background);
+            z-index: 10;
+            flex-shrink: 0;
+            /* Make header not shrink */
+        }
+        
+        .modal-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #888;
+            padding: 0;
+            line-height: 1;
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        .modal-close-btn:hover {
+            color: #333;
+        }
+        
+        .modal-body {
+            overflow-y: auto;
+            /* This is the main scroller */
+            flex-grow: 1;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        /* Separate padding for list body */
+        
+        #modal-list-body {
+            padding: 8px 20px 20px 20px;
+        }
+        
+        .complaint-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .complaint-item {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .complaint-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .complaint-type {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--primary-color);
+        }
+        
+        .complaint-user {
+            font-size: 0.85rem;
+            color: #555;
+        }
+        
+        .complaint-desc {
+            font-size: 0.95rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .complaint-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #777;
+        }
+        
+        .complaint-footer a {
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--primary-hover);
+        }
+        
+        .modal-loader {
+            text-align: center;
+            padding: 40px;
+            font-size: 1rem;
+            color: #555;
+        }
+        /* --- Map Filter Panel (Unchanged) --- */
+        
+        .filter-panel {
+            display: block;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 200px;
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+            overflow-x: hidden;
+            overflow-y: auto;
+            max-height: calc(100vh - 85px);
+        }
+        
+        .filter-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+            background-color: var(--card-background);
+            z-index: 2;
+        }
+        
+        .filter-body {
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+        }
+        
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            background-color: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #444;
+            transition: background-color 0.2s ease;
+        }
+        
+        .filter-btn .material-icons {
+            font-size: 1.25rem;
+        }
+        
+        .filter-btn:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .filter-btn.active {
+            background-color: #e8f3ff;
+            color: var(--primary-hover);
+            font-weight: 600;
+        }
+        
+        .filter-toggle-btn {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 48px;
+            height: 48px;
+            background-color: var(--card-background);
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+        }
+        
+        .filter-toggle-btn .material-icons {
+            font-size: 24px;
+        }
+        /* --- Modal List Filters (Unchanged) --- */
+        
+        .modal-filters {
+            display: flex;
+            gap: 15px;
+            padding: 10px 20px;
+            background-color: var(--card-background);
+            border-bottom: 1px solid #e0e0e0;
+            z-index: 9;
+            flex-shrink: 0;
+            /* This is correct */
+        }
+        
+        .modal-filter-group {
+            flex: 1;
+        }
+        
+        .modal-filter-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+        
+        .modal-filter-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            background-color: #f9f9f9;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+        /* --- Back Button & Detail View (Unchanged) --- */
+        
+        #modal-back-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 0;
+            display: none;
+            /* Hidden by default */
+            min-width: 50px;
+            /* Match close button */
+            text-align: left;
+        }
+        
+        .detail-view-content {
+            padding: 0;
+        }
+        
+        .detail-view-content h4 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 5px;
+            color: var(--primary-color);
+        }
+        
+        .detail-view-content p {
+            font-size: 1rem;
+            margin: 4px 0 12px;
+            line-height: 1.6;
+        }
+        
+        .detail-view-content .meta-data {
+            font-size: 0.9rem;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .detail-view-content .meta-data strong {
+            color: var(--text-primary);
+        }
+        
+        .detail-view-content .description {
+            margin-top: 15px;
+        }
+        
+        .detail-images-container {
+            margin-top: 20px;
+        }
+        
+        .detail-images-container h5 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        .detail-images-grid {
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            /* position: sticky was removed */
+            margin-top: 15px;
         }
+        
+        .detail-images-grid a {
+            display: block;
+        }
+        
         .detail-images-grid img {
-            width: 90px;
-            height: 90px;
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            transition: transform 0.2s;
         }
-    }
+        
+        .detail-images-grid img:hover {
+            transform: scale(1.05);
+        }
+        /* =========================================
+           *** THE FIX (Begins around line 530) ***
+           This CSS removes the overflow block and
+           ensures the modal list layout is correct.
+        ========================================= */
+        
+        #modal-view-list {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            /* Make this view grow */
+            /* overflow: hidden; <-- THIS WAS THE BUG. It has been removed. */
+            min-height: 0;
+            /* Added for flexbox stability */
+        }
+        /* =========================================
+           This rule (around line 547) is also essential.
+           It tells the list body to grow and scroll.
+        ========================================= */
+        
+        #modal-list-body {
+            flex-grow: 1;
+            /* Make this body grow */
+            overflow-y: auto;
+            /* Make THIS body scroll */
+        }
+        /* =========================================
+           END OF FIX
+        ========================================= */
+        
+        @media (max-width: 768px) {
+            .app-header .btn-primary {
+                display: none;
+            }
+            .fab {
+                display: flex;
+            }
+            .app-header {
+                padding: 0 12px;
+                height: 50px;
+            }
+            .brand-title {
+                font-size: 1.4rem;
+                gap: 5px;
+            }
+            .brand-title .material-icons {
+                font-size: 1.6rem;
+            }
+            #user-menu-button {
+                width: 38px;
+                height: 38px;
+            }
+            .modal-header {
+                padding: 12px 15px;
+                height: auto;
+                min-height: 50px;
+            }
+            .modal-body {
+                padding: 15px;
+            }
+            #modal-list-body {
+                padding: 8px 15px 15px 15px;
+            }
+            .filter-toggle-btn {
+                display: flex;
+            }
+            .filter-panel {
+                display: none;
+                width: 180px;
+                top: 65px;
+                right: 10px;
+                z-index: 1001;
+                max-height: calc(100vh - 130px);
+            }
+            .filter-panel.show-on-mobile {
+                display: block;
+            }
+            .leaflet-control-layers {
+                margin-top: 65px !important;
+            }
+            /* --- Mobile styles for modal filters --- */
+            .modal-filters {
+                flex-direction: column;
+                gap: 10px;
+                /* position: sticky was removed */
+            }
+            .detail-images-grid img {
+                width: 90px;
+                height: 90px;
+            }
+        }
     </style>
 </head>
 
 <body>
     <header class="app-header">
         <h1 class="brand-title">
-            <span class="material-icons">signal_cellular_alt</span>
-            CityPulse
+            <span class="material-icons">signal_cellular_alt</span> CityPulse
         </h1>
         <nav class="nav-actions">
             <a href="{% url 'report_issue' %}" class="btn btn-primary">Report Issue</a>
@@ -499,7 +651,9 @@
                 </button>
                 <div id="dropdown-menu" class="dropdown-content">
                     <a href="{% url 'profile' %}">View Profile</a>
-                    <button id="recent-complaints-btn">Recent Complaints</button>
+
+                    <a href="{% url 'recent_complaints_list' %}">Recent Complaints</a>
+
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
                         <button type="submit" class="logout-btn">Log Out</button>
@@ -535,7 +689,7 @@
                     <span>Resolved</span>
                 </button>
             </div>
-            
+
             <div class="filter-header" style="border-top: 1px solid #eee;">
                 <span class="material-icons" style="color: #6f42c1">layers</span>
                 <span>Issue Type</span>
@@ -573,46 +727,7 @@
         </a>
     </main>
 
-    <div id="recent-complaints-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button id="modal-back-btn">← Back</button>
-                <h3 id="modal-title">Recent Complaints</h3>
-                <button id="modal-close-btn" class="modal-close-btn">×</button>
-            </div>
 
-            <div id="modal-view-list">
-                <div class="modal-filters">
-                    <div class="modal-filter-group">
-                        <label for="modal-issue-filter">Filter by Issue:</label>
-                        <select id="modal-issue-filter" class="modal-filter-select">
-                            <option value="">All Issues</option>
-                            {% for value, label in issue_types_choices %}
-                            <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="modal-filter-group">
-                        <label for="modal-status-filter">Filter by Status:</label>
-                        <select id="modal-status-filter" class="modal-filter-select">
-                            <option value="">All Statuses</option>
-                            {% for value, label in status_choices %}
-                            <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div id="modal-list-body" class="modal-body">
-                    <div class="modal-loader">Loading...</div>
-                </div>
-            </div>
-
-            <div id="modal-view-detail" class="modal-body" style="display: none;">
-                <div class="modal-loader">Loading details...</div>
-            </div>
-        </div>
-    </div>
-    
     <script>
         // --- Global Variables (Unchanged) ---
         var map;
@@ -631,7 +746,7 @@
             dropdownMenu.style.display = 'none';
         });
 
-        
+
         // --- Marker Icons (Unchanged) ---
         const iconBaseUrl = 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers/img/';
         const shadowUrl = iconBaseUrl + 'marker-shadow.png';
@@ -642,12 +757,24 @@
             popupAnchor: [1, -34],
             shadowSize: [41, 41]
         };
-        const garbageIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-green.png' });
-        const potholeIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-red.png' });
-        const waterIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-blue.png' });
-        const electricityIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-orange.png' });
-        const strayAnimalIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-grey.png' });
-        const otherIcon = new L.Icon({ ...iconOptions, iconUrl: iconBaseUrl + 'marker-icon-grey.png' });
+        const garbageIcon = new L.Icon({...iconOptions,
+            iconUrl: iconBaseUrl + 'marker-icon-green.png'
+        });
+        const potholeIcon = new L.Icon({...iconOptions,
+            iconUrl: iconBaseUrl + 'marker-icon-red.png'
+        });
+        const waterIcon = new L.Icon({...iconOptions,
+            iconUrl: iconBaseUrl + 'marker-icon-blue.png'
+        });
+        const electricityIcon = new L.Icon({...iconOptions,
+            iconUrl: iconBaseUrl + 'marker-icon-orange.png'
+        });
+        const strayAnimalIcon = new L.Icon({...iconOptions,
+            iconUrl: iconBaseUrl + 'marker-icon-grey.png'
+        });
+        const otherIcon = new L.Icon({...iconOptions,
+            iconUrl: iconBaseUrl + 'marker-icon-grey.png'
+        });
 
         const markerIcons = {
             'garbage': garbageIcon,
@@ -661,13 +788,19 @@
 
         // --- Map Initialization (Unchanged) ---
         function initializeMap() {
-            var streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
-            var darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CARTO' });
-            var satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri' });
+            var streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            });
+            var darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© CARTO'
+            });
+            var satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles © Esri'
+            });
 
             map = L.map('map', {
                 center: [22.3145, 87.3093],
-                zoom: 15, 
+                zoom: 15,
                 layers: [streetMap]
             });
 
@@ -682,9 +815,11 @@
             allLayers.forEach(layer => layer.addTo(map));
 
             var baseMaps = {
-                "Street": streetMap, "Dark": darkMap, "Satellite": satelliteMap
+                "Street": streetMap,
+                "Dark": darkMap,
+                "Satellite": satelliteMap
             };
-            
+
             L.control.layers(baseMaps, {}).addTo(map);
         }
 
@@ -697,7 +832,7 @@
             if (!map) return;
             clearAllLayers();
             const baseUrl = "{% url 'issue_data_api' %}";
-            const url = baseUrl + queryString; 
+            const url = baseUrl + queryString;
             console.log("Fetching map data from:", url);
 
             fetch(url)
@@ -709,11 +844,13 @@
                     }
                     dataPoints.forEach(point => {
                         const latLng = [point.lat, point.lon];
-                        const type = point.type ? 
-                                     point.type.trim().toLowerCase().replace(/ /g, '_') : 
-                                     'other'; 
+                        const type = point.type ?
+                            point.type.trim().toLowerCase().replace(/ /g, '_') :
+                            'other';
                         const icon = markerIcons[type] || markerIcons['other'];
-                        const marker = L.marker(latLng, { icon: icon });
+                        const marker = L.marker(latLng, {
+                            icon: icon
+                        });
 
                         const popupContent = `
                             <b style="text-transform: capitalize;">${point.type.replace('_', ' ')}</b>
@@ -723,12 +860,24 @@
                         marker.bindPopup(popupContent);
 
                         switch (type) {
-                            case 'garbage':         marker.addTo(garbageLayer); break;
-                            case 'pothole':         marker.addTo(potholeLayer); break;
-                            case 'waterlogging':    marker.addTo(waterLayer); break;
-                            case 'electricity_issue': marker.addTo(electricityLayer); break;
-                            case 'stray_animal':    marker.addTo(strayAnimalLayer); break;
-                            default:                marker.addTo(otherLayer); break;
+                            case 'garbage':
+                                marker.addTo(garbageLayer);
+                                break;
+                            case 'pothole':
+                                marker.addTo(potholeLayer);
+                                break;
+                            case 'waterlogging':
+                                marker.addTo(waterLayer);
+                                break;
+                            case 'electricity_issue':
+                                marker.addTo(electricityLayer);
+                                break;
+                            case 'stray_animal':
+                                marker.addTo(strayAnimalLayer);
+                                break;
+                            default:
+                                marker.addTo(otherLayer);
+                                break;
                         }
                     });
                     console.log(`Loaded ${dataPoints.length} filtered markers.`);
@@ -737,7 +886,7 @@
                     console.error('Error fetching marker data:', error);
                 });
         }
-        
+
         function getActiveFilterQueryString() {
             const issueTypeFilters = document.querySelectorAll('#issue-type-filters .filter-btn.active');
             const statusFilters = document.querySelectorAll('#status-filters .filter-btn.active');
@@ -746,203 +895,20 @@
             const statusParams = [...statusFilters].map(btn => `status=${encodeURIComponent(btn.dataset.status)}`);
 
             const allParams = [...typeParams, ...statusParams];
-            
+
             return allParams.length > 0 ? '?' + allParams.join('&') : '';
         }
 
         function updateMapFilters() {
-            const queryString = getActiveFilterQueryString(); 
+            const queryString = getActiveFilterQueryString();
             fetchAndPopulateLayers(queryString);
         }
 
-        /*
-        =========================================
-        MODAL JAVASCRIPT (Unchanged from previous)
-        =========================================
-        */
-        const modal = document.getElementById('recent-complaints-modal');
-        const openModalBtn = document.getElementById('recent-complaints-btn');
-        const closeModalBtn = document.getElementById('modal-close-btn');
-        const modalTitle = document.getElementById('modal-title');
-        
-        const modalViewList = document.getElementById('modal-view-list');
-        const modalViewDetail = document.getElementById('modal-view-detail');
-        const modalListBody = document.getElementById('modal-list-body');
-        const modalBackBtn = document.getElementById('modal-back-btn');
-        const modalFilters = document.querySelector('.modal-filters');
-
-        const modalIssueFilter = document.getElementById('modal-issue-filter');
-        const modalStatusFilter = document.getElementById('modal-status-filter');
-
-        function getModalFilterQueryString() {
-            const issueType = modalIssueFilter.value;
-            const status = modalStatusFilter.value;
-            const params = [];
-            if (issueType) {
-                params.push(`type=${encodeURIComponent(issueType)}`);
-            }
-            if (status) {
-                params.push(`status=${encodeURIComponent(status)}`);
-            }
-            return params.length > 0 ? '?' + params.join('&') : '';
-        }
-
-        function fetchFilteredComplaints() {
-            modalListBody.innerHTML = '<div class="modal-loader">Loading...</div>';
-            
-            const queryString = getModalFilterQueryString();
-            const baseUrl = "{% url 'recent_issues_api' %}";
-            const url = baseUrl + queryString;
-            console.log("Fetching modal data from:", url);
-
-            if (queryString) {
-                modalTitle.textContent = 'Filtered Complaints';
-            } else {
-                modalTitle.textContent = 'Recent Complaints';
-            }
-
-            fetch(url) 
-                .then(response => response.json())
-                .then(data => {
-                    let html = '<ul class="complaint-list">';
-                    if (data.length === 0) {
-                        html += '<div class="modal-loader">No complaints found matching these filters.</div>';
-                    }
-                    data.forEach(item => {
-                        html += `
-                            <li class="complaint-item">
-                                <div class="complaint-item-header">
-                                    <span class="complaint-type">${item.issue_type}</span>
-                                    <span class="complaint-user">by ${item.reporter_username}</span>
-                                </div>
-                                <p class="complaint-desc">${item.description}</p>
-                                <div class="complaint-footer">
-                                    <span>${item.reported_at}</span>
-                                    <a href="#" class="view-details-btn" data-id="${item.id}">View Details</a>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += '</ul>';
-                    modalListBody.innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error fetching recent complaints:', error);
-                    modalBody.innerHTML = '<div class="modal-loader">Error loading complaints. Please try again.</div>';
-                });
-        }
-        
-        function showComplaintDetail(issueId) {
-            modalViewList.style.display = 'none';
-            modalViewDetail.style.display = 'block';
-            modalBackBtn.style.display = 'block';
-            modalTitle.textContent = `Issue #${issueId}`;
-            modalFilters.style.display = 'none'; 
-            
-            modalViewDetail.innerHTML = '<div class="modal-loader">Loading details...</div>';
-            
-            fetch(`/api/issue-detail/${issueId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        modalViewDetail.innerHTML = `<div class="modal-loader">${data.error}</div>`;
-                        return;
-                    }
-
-                    let imagesHTML = '';
-                    if (data.images && data.images.length > 0) {
-                        imagesHTML = `
-                            <div class="detail-images-container">
-                                <h5>Attached Photos</h5>
-                                <div class="detail-images-grid">
-                                    ${data.images.map(imgUrl => `
-                                        <a href="${imgUrl}" target="_blank">
-                                            <img src="${imgUrl}" alt="Issue Photo">
-                                        </a>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        imagesHTML = `
-                            <div class="detail-images-container">
-                                <h5>Attached Photos</h5>
-                                <p style="font-size: 0.9rem; color: #555;">No photos were attached to this report.</p>
-                            </div>
-                        `;
-                    }
-
-                    const detailHTML = `
-                        <div class="detail-view-content">
-                            <h4>${data.issue_type}</h4>
-                            <p class="meta-data">
-                                Reported by <strong>${data.reported_by}</strong> on ${data.reported_at}<br>
-                                Status: <strong>${data.status}</strong><br>
-                                Location: 
-                                <a href="http://googleusercontent.com/maps/google.com/0{data.latitude},${data.longitude}" target="_blank">
-                                    ${data.latitude}, ${data.longitude} (View Map)
-                                </a>
-                            </p>
-                            <p class="description">${data.description}</p>
-                            ${imagesHTML}
-                        </div>
-                    `;
-                    
-                    modalViewDetail.innerHTML = detailHTML;
-                })
-                .catch(error => {
-                    console.error('Error fetching issue detail:', error);
-                    modalViewDetail.innerHTML = '<div class="modal-loader">Error loading details.</div>';
-                });
-        }
-        
-        function showComplaintList() {
-            modalViewList.style.display = 'block';
-            modalViewDetail.style.display = 'none';
-            modalBackBtn.style.display = 'none';
-            modalTitle.textContent = 'Recent Complaints';
-            modalFilters.style.display = 'flex'; 
-        }
-
-        function openRecentComplaints() {
-            modal.style.display = 'flex';
-            dropdownMenu.style.display = 'none';
-            
-            modalViewList.style.display = 'block';
-            modalViewDetail.style.display = 'none';
-            modalBackBtn.style.display = 'none';
-            modalTitle.textContent = 'Recent Complaints';
-            modalFilters.style.display = 'flex'; 
-            
-            modalIssueFilter.value = "";
-            modalStatusFilter.value = "";
-            fetchFilteredComplaints();
-        }
-
-        function closeRecentComplaints() {
-            modal.style.display = 'none';
-        }
-        
-        openModalBtn.addEventListener('click', openRecentComplaints);
-        closeModalBtn.addEventListener('click', closeRecentComplaints);
-        
-        modalBackBtn.addEventListener('click', showComplaintList);
-        modalIssueFilter.addEventListener('change', fetchFilteredComplaints);
-        modalStatusFilter.addEventListener('change', fetchFilteredComplaints);
-
-        modalListBody.addEventListener('click', function(e) {
-            const target = e.target.closest('.view-details-btn');
-            if (target) {
-                e.preventDefault(); 
-                const id = target.dataset.id;
-                showComplaintDetail(id);
-            }
-        });
 
 
         // --- Run on Page Load (Unchanged) ---
         document.addEventListener('DOMContentLoaded', function() {
-            
+
             initializeMap();
 
             /*
@@ -973,19 +939,19 @@
 
             filterToggleBtn.addEventListener('click', (event) => {
                 filterPanel.classList.toggle('show-on-mobile');
-                event.stopPropagation(); 
+                event.stopPropagation();
             });
 
             map.on('click', () => {
                 filterPanel.classList.remove('show-on-mobile');
             });
-            
+
             filterPanel.addEventListener('click', (event) => {
                 event.stopPropagation();
             });
 
         });
-
     </script>
 </body>
+
 </html>
