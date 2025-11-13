@@ -8,5 +8,5 @@ psycopg2-binary
 vaderSentiment
 python-decouple
 cloudinary
-
+django-cloudinary-storage
 
